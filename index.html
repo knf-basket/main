@@ -113,7 +113,8 @@
   .keypad{
     display:grid;
     grid-template-columns:repeat(3,1fr);
-    grid-template-rows:repeat(4,minmax(0,1fr));
+    grid-template-rows:repeat(4,minmax(0,68px));
+    align-content:center;
     gap:8px;
     flex:1;
     min-height:0;
@@ -130,6 +131,7 @@
     cursor:pointer;
     transition:background .12s ease, transform .1s ease;
     min-height:0;
+    max-height:68px;
   }
   .key:active{background:var(--ok-bg);transform:scale(.96);}
   .key.clear{color:var(--rent);font-size:16px;font-weight:700;}
@@ -433,7 +435,8 @@
             <div style="margin:4px 0 0 4px;display:flex;flex-direction:column;gap:3px;">
               <div>· 1시간 이내 — 0점</div>
               <div>· 1~24시간 — 3점</div>
-              <div>· 24시간 초과 — 2점</div>
+              <div>· 24시간 초과~5일 이내 — 2점</div>
+              <div>· 5일 초과 — 1점</div>
             </div>
           </div>
           <div><strong style="color:#B0473B;">훼손/분실</strong> — 마일리지 부여 없음(0점)</div>
@@ -503,8 +506,9 @@
     <div class="modal-msg" id="userLookupMsg" style="margin-top:6px;margin-bottom:0;"></div>
 
     <div id="userMileageSection" style="display:none;">
-      <div style="margin-top:16px;padding:16px 18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;font-size:16px;color:var(--navy);line-height:2;">
+      <div style="margin-top:16px;padding:16px 18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;font-size:13px;color:var(--navy);line-height:1.9;">
         <div>○ 조회 기간 중 적립마일리지 : <strong id="userMileageEarned">0</strong>점</div>
+        <div>○ 대여 중 : <strong id="userRentingList">없음</strong></div>
       </div>
 
       <h3 class="sect">
@@ -515,10 +519,6 @@
           <thead><tr><th>구분</th><th>일자</th><th>시간</th><th>장바구니 번호</th><th>마일리지</th></tr></thead>
           <tbody id="userInvBody"></tbody>
         </table>
-      </div>
-
-      <div style="margin-top:16px;padding:16px 18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;font-size:16px;color:var(--navy);line-height:2;">
-        <div>○ 대여 중 : <strong id="userRentingList">없음</strong></div>
       </div>
     </div>
   </div>
@@ -596,7 +596,7 @@
         <button id="exportRankCsvBtn" style="text-transform:none;letter-spacing:normal;background:var(--navy);color:#fff;border:none;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;">⬇ 이용실적 CSV 다운로드</button>
       </div>
     </h3>
-    <div style="font-size:12px;color:var(--sub);margin-bottom:14px;line-height:1.6;">마일리지 산정기준 = 대여 1점/건 + 반납 시 대여시간 기준(1시간 이내 0점 · 1~24시간 3점 · 24시간 초과 2점)<br>대여횟수·반납횟수·적립마일리지 모두 선택한 기간 기준으로 합계됩니다.</div>
+    <div style="font-size:12px;color:var(--sub);margin-bottom:14px;line-height:1.6;">마일리지 산정기준 = 대여 1점/건 + 반납 시 대여시간 기준(1시간 이내 0점 · 1~24시간 3점 · 24시간 초과~5일 이내 2점 · 5일 초과 1점)<br>대여횟수·반납횟수·적립마일리지 모두 선택한 기간 기준으로 합계됩니다.</div>
     <div class="periodrow" id="periodRow">
       <button class="periodbtn" data-period="today">최근 24시간</button>
       <button class="periodbtn" data-period="7d">최근 7일</button>
@@ -1473,11 +1473,12 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
   const RENT_POINT = 1; // 대여 시 건당 1점
 
   // 반납 점수: 대여~반납 경과시간(분) 기준
-  //  1시간 이내: 0점 / 1시간초과~24시간이내: 3점 / 24시간초과: 2점
+  //  1시간 이내: 0점 / 1시간초과~24시간이내: 3점 / 24시간초과~5일이내: 2점 / 5일 초과: 1점
   function calcReturnPoints(mins){
     if(mins <= 60) return 0;
     if(mins <= 1440) return 3;
-    return 2;
+    if(mins <= 7200) return 2;
+    return 1;
   }
 
   function computeRanking(state){
@@ -1947,6 +1948,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
   goRentBtn.addEventListener('click', () => {
     flowMode = '대여';
     resetInputFields();
+    stepInputTitle.style.display = '';
     stepInputTitle.textContent = '대여 정보 입력';
     reportReasonGroup.style.display = 'none';
     basketBox.style.display = '';
@@ -1959,6 +1961,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
   goReturnBtn.addEventListener('click', () => {
     flowMode = '반납';
     resetInputFields();
+    stepInputTitle.style.display = '';
     stepInputTitle.textContent = '반납 정보 입력';
     reportReasonGroup.style.display = 'none';
     basketBox.style.display = '';
@@ -1973,7 +1976,8 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     resetInputFields();
     reportReason = '훼손';
     reportReasonRow.querySelectorAll('.periodbtn').forEach(b => b.classList.toggle('active', b.dataset.reason === reportReason));
-    stepInputTitle.textContent = '훼손/분실 신고 정보 입력';
+    stepInputTitle.style.display = 'none';
+    stepInputTitle.textContent = '';
     reportReasonGroup.style.display = '';
     basketBox.style.display = '';
     empLookupOpenBtn.style.display = '';
@@ -2192,7 +2196,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
       ? `${customStartInput.value} ~ ${customEndInput.value}`
       : (PERIOD_LABELS[rankPeriod] || '전체');
     rows.push(['이용실적', `조회기간: ${periodLabel}`]);
-    rows.push(['마일리지 산정기준', '대여 1점/건, 반납 1시간이내 0점 / 1~24시간 3점 / 24시간초과 2점']);
+    rows.push(['마일리지 산정기준', '대여 1점/건, 반납 1시간이내 0점 / 1~24시간 3점 / 24시간초과~5일이내 2점 / 5일초과 1점']);
     rows.push(['참고', '대여횟수·반납횟수·적립마일리지 모두 조회기간 기준']);
     rows.push([]);
     rows.push(['순위','사번','대여횟수','반납횟수','적립마일리지','누적반납횟수','마일리지지급대상']);
