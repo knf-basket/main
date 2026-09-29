@@ -496,23 +496,28 @@
       </div>
     </div>
     <button class="modal-confirm" id="userLookupBtn" style="width:100%;margin-top:10px;">조회</button>
+    <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+      <button id="userLookupResetBtn" style="text-transform:none;letter-spacing:normal;background:var(--panel);color:var(--sub);border:1px solid var(--line);padding:6px 14px;border-radius:20px;font-size:12.5px;font-weight:700;cursor:pointer;">다시 조회</button>
+    </div>
     <div class="modal-msg" id="userLookupMsg" style="margin-top:6px;margin-bottom:0;"></div>
 
     <div id="userMileageSection" style="display:none;">
       <div style="margin-top:16px;padding:16px 18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;font-size:16px;color:var(--navy);line-height:2;">
-        <div>○ 적립마일리지 : <strong id="userMileageEarned">0</strong>점</div>
-        <div>○ 대여 중 : <strong id="userRentingList">없음</strong></div>
+        <div>○ 조회 기간 중 적립마일리지 : <strong id="userMileageEarned">0</strong>점</div>
       </div>
 
-      <h3 class="sect" style="display:flex;justify-content:space-between;align-items:center;">
+      <h3 class="sect">
         <span id="userInvSectTitle">○ 대여 내역</span>
-        <button id="userLookupResetBtn" style="text-transform:none;letter-spacing:normal;background:var(--panel);color:var(--sub);border:1px solid var(--line);padding:6px 14px;border-radius:20px;font-size:12.5px;font-weight:700;cursor:pointer;">다시 조회</button>
       </h3>
       <div class="invtable-wrap no-hscroll full">
         <table class="invtable compact">
           <thead><tr><th>구분</th><th>일자</th><th>시간</th><th>장바구니 번호</th><th>마일리지</th></tr></thead>
           <tbody id="userInvBody"></tbody>
         </table>
+      </div>
+
+      <div style="margin-top:16px;padding:16px 18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;font-size:16px;color:var(--navy);line-height:2;">
+        <div>○ 대여 중 : <strong id="userRentingList">없음</strong></div>
       </div>
     </div>
   </div>
@@ -534,7 +539,7 @@
       <span>장기 미반납 (7일 초과)</span>
       <span id="overdueCount" style="font-weight:700;color:var(--sub);">0건</span>
     </h3>
-    <div class="invtable-wrap">
+    <div class="invtable-wrap full">
       <table class="invtable">
         <thead><tr><th>장바구니번호</th><th>사번</th><th>대여일시</th><th>경과시간</th></tr></thead>
         <tbody id="overdueBody"></tbody>
@@ -544,7 +549,7 @@
       <span>입출고 이력</span>
       <button id="exportCsvBtn" style="text-transform:none;letter-spacing:normal;background:var(--navy);color:#fff;border:none;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;">⬇ 현황·이력 CSV 다운로드</button>
     </h3>
-    <div class="invtable-wrap">
+    <div class="invtable-wrap full">
       <table class="invtable">
         <thead><tr><th>일자</th><th>시간</th><th>구분</th><th>사번</th><th>장바구니번호</th><th>사유</th><th>수량</th><th>잔여재고</th></tr></thead>
         <tbody id="invBody"></tbody>
