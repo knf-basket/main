@@ -549,6 +549,10 @@
       <span>입출고 이력</span>
       <button id="exportCsvBtn" style="text-transform:none;letter-spacing:normal;background:var(--navy);color:#fff;border:none;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;">⬇ 현황·이력 CSV 다운로드</button>
     </h3>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+      <input type="number" id="invBasketFilterInput" min="1" inputmode="numeric" placeholder="장바구니 번호로 이력 조회 (예: 12)" style="flex:1;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;" />
+      <button id="invBasketFilterClearBtn" style="text-transform:none;letter-spacing:normal;background:var(--panel);color:var(--sub);border:1px solid var(--line);padding:11px 14px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">전체보기</button>
+    </div>
     <div class="invtable-wrap full">
       <table class="invtable">
         <thead><tr><th>일자</th><th>시간</th><th>구분</th><th>사번</th><th>장바구니번호</th><th>사유</th><th>수량</th><th>잔여재고</th></tr></thead>
@@ -770,6 +774,9 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
   const stockIn = document.getElementById('stockIn');
   const stockOut = document.getElementById('stockOut');
   const invBody = document.getElementById('invBody');
+  const invBasketFilterInput = document.getElementById('invBasketFilterInput');
+  const invBasketFilterClearBtn = document.getElementById('invBasketFilterClearBtn');
+  let invBasketFilter = '';
   const userInvBody = document.getElementById('userInvBody');
   const userInvSectTitle = document.getElementById('userInvSectTitle');
   const userLookupEmpInput = document.getElementById('userLookupEmpInput');
@@ -1195,11 +1202,21 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     }
 
     // 입출고 이력 (관리자) - DB 컬럼 형태로 분리 표시 (마일리지 차감은 재고와 무관하므로 제외)
-    const invLog = state.log.filter(l => l.type !== 'mileageRedeem');
-    if(invLog.length === 0){
-      invBody.innerHTML = `<tr><td colspan="8" class="invempty">입출고 이력이 없습니다</td></tr>`;
+    let invLog = state.log.filter(l => l.type !== 'mileageRedeem');
+    const basketFilterNum = invBasketFilter ? Number(invBasketFilter) : null;
+    if(basketFilterNum != null && !Number.isNaN(basketFilterNum)){
+      invLog = invLog.filter(l =>
+        Number(l.basketId) === basketFilterNum ||
+        (l.basketRange && String(l.basketRange).includes(String(basketFilterNum)))
+      );
+    }
+    const invLogShown = basketFilterNum != null ? invLog : invLog.slice(0,30);
+    if(invLogShown.length === 0){
+      invBody.innerHTML = basketFilterNum != null
+        ? `<tr><td colspan="8" class="invempty">${padBasket(basketFilterNum)}번 장바구니의 이력이 없습니다</td></tr>`
+        : `<tr><td colspan="8" class="invempty">입출고 이력이 없습니다</td></tr>`;
     } else {
-      invBody.innerHTML = invLog.slice(0,30).map(l => {
+      invBody.innerHTML = invLogShown.map(l => {
         const isAdjust = l.type === 'adjust';
         const { cls, label } = classifyLogRow(l);
         const dateStr = l.at ? l.at.slice(0,10) : '-';
@@ -1316,6 +1333,16 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     userLookupEmpInput.value = '';
     userDateRangeDefaults();
     userLookupMsg.textContent = '';
+    if(lastState) render(lastState);
+  });
+
+  invBasketFilterInput.addEventListener('input', () => {
+    invBasketFilter = invBasketFilterInput.value.trim();
+    if(lastState) render(lastState);
+  });
+  invBasketFilterClearBtn.addEventListener('click', () => {
+    invBasketFilter = '';
+    invBasketFilterInput.value = '';
     if(lastState) render(lastState);
   });
 
@@ -2305,7 +2332,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     document.querySelectorAll('.user-tab').forEach(t => t.style.display = 'none');
     document.querySelectorAll('.admin-tab').forEach(t => t.style.display = '');
     updateTabbarLayout();
-    adminBtn.textContent = '👤 사용자 모드';
+    adminBtn.textContent = '👤 사용자';
     adminBtn.classList.add('on');
     // 관리자 모드 진입 시 재고관리 화면으로 이동
     tabs.forEach(x => x.classList.remove('active'));
