@@ -240,6 +240,7 @@
   .invtable th{text-align:left;color:var(--sub);font-weight:600;padding:9px 8px;border-bottom:1px solid var(--line);font-size:12.5px;position:sticky;top:0;background:var(--bg);}
   .invtable td{padding:10px 8px;border-bottom:1px solid #EEF0EA;}
   #userMileageSection{display:flex;flex-direction:column;}
+  .basket-link{color:var(--navy);font-weight:700;text-decoration:underline;cursor:pointer;}
   .iotag{font-size:12px;font-weight:700;padding:3px 9px;border-radius:10px;}
   .iotag.in{background:var(--ok-bg);color:var(--ok);}
   .iotag.out{background:var(--rent-bg);color:var(--rent);}
@@ -1226,7 +1227,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
         const days = Math.floor(elapsedMs / 86400000);
         const hours = Math.floor((elapsedMs % 86400000) / 3600000);
         return `<tr>
-          <td>${padBasket(b.id)}번</td>
+          <td><span class="basket-link" data-basketid="${b.id}">${padBasket(b.id)}번</span></td>
           <td>${empLabel(state, b.employeeId)}</td>
           <td>${fmtRentedAt(b.rentedAt)}</td>
           <td style="color:var(--rent);font-weight:700;">${days}일 ${hours}시간</td>
@@ -1244,7 +1245,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
         const { cls, label } = classifyLogRow(l);
         const dateStr = l.at ? l.at.slice(0,10) : '-';
         const empCell = l.employeeId ? empLabel(state, l.employeeId) : '-';
-        const basketCell = l.basketId ? padBasket(l.basketId) + '번' : (l.basketRange || '-');
+        const basketCell = l.basketId ? `<span class="basket-link" data-basketid="${l.basketId}">${padBasket(l.basketId)}번</span>` : (l.basketRange || '-');
         const reasonCell = isAdjust ? l.reason : '-';
         const qtyCell = l.qty != null ? l.qty : 1;
         return `<tr>
@@ -1424,6 +1425,25 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     lookupBasketInput.value = '';
     lookupBasketMsg.textContent = '';
     if(lastState) render(lastState);
+  });
+
+  // 관리자 모드 어디서든 장바구니 번호를 클릭하면 "이력조회" 탭으로 이동해 바로 조회
+  function goToBasketLookup(basketNum){
+    if(typeof closeBasketListModal === 'function') closeBasketListModal();
+    lookupBasketNum = basketNum;
+    lookupBasketInput.value = basketNum;
+    lookupBasketMsg.textContent = '';
+    tabs.forEach(x => x.classList.remove('active'));
+    screens.forEach(s => s.classList.remove('active'));
+    document.querySelector('.tab[data-screen="lookup"]').classList.add('active');
+    document.getElementById('screen-lookup').classList.add('active');
+    if(lastState) render(lastState);
+  }
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('.basket-link');
+    if(!link) return;
+    const basketId = parseInt(link.dataset.basketid, 10);
+    if(!Number.isNaN(basketId)) goToBasketLookup(basketId);
   });
 
 
@@ -2203,7 +2223,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     }
     return baskets.map(b => `
       <tr>
-        <td>${padBasket(b.id)}번</td>
+        <td><span class="basket-link" data-basketid="${b.id}">${padBasket(b.id)}번</span></td>
         <td>${b.status === 'available' ? '대여가능' : '대여중'}</td>
         <td>${b.status === 'rented' ? empLabel(lastState, b.employeeId) : '-'}</td>
         <td><button class="mini-btn basket-edit-btn" data-basketid="${b.id}">상태변경</button></td>
