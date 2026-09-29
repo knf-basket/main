@@ -113,7 +113,7 @@
   .keypad{
     display:grid;
     grid-template-columns:repeat(3,1fr);
-    grid-template-rows:repeat(4,minmax(0,68px));
+    grid-template-rows:repeat(4,minmax(0,100px));
     align-content:center;
     gap:8px;
     flex:1;
@@ -123,7 +123,7 @@
     background:var(--panel);
     border:1px solid var(--line);
     border-radius:12px;
-    font-size:26px;
+    font-size:28px;
     font-weight:700;
     display:flex;
     align-items:center;
@@ -131,7 +131,7 @@
     cursor:pointer;
     transition:background .12s ease, transform .1s ease;
     min-height:0;
-    max-height:68px;
+    max-height:100px;
   }
   .key:active{background:var(--ok-bg);transform:scale(.96);}
   .key.clear{color:var(--rent);font-size:16px;font-weight:700;}
