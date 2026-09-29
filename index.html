@@ -549,15 +549,41 @@
       <span>입출고 이력</span>
       <button id="exportCsvBtn" style="text-transform:none;letter-spacing:normal;background:var(--navy);color:#fff;border:none;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;">⬇ 현황·이력 CSV 다운로드</button>
     </h3>
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
-      <input type="number" id="invBasketFilterInput" min="1" inputmode="numeric" placeholder="장바구니 번호로 이력 조회 (예: 12)" style="flex:1;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;" />
-      <button id="invBasketFilterClearBtn" style="text-transform:none;letter-spacing:normal;background:var(--panel);color:var(--sub);border:1px solid var(--line);padding:11px 14px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">전체보기</button>
-    </div>
     <div class="invtable-wrap full">
       <table class="invtable">
         <thead><tr><th>일자</th><th>시간</th><th>구분</th><th>사번</th><th>장바구니번호</th><th>사유</th><th>수량</th><th>잔여재고</th></tr></thead>
         <tbody id="invBody"></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- 장바구니 번호로 이력 조회 -->
+  <div class="screen" id="screen-lookup">
+    <h3 class="sect">장바구니 번호로 이력 조회</h3>
+    <div class="modal-field" style="margin-top:0;">
+      <label>장바구니 번호</label>
+      <div style="display:flex;gap:8px;">
+        <input type="number" id="lookupBasketInput" min="1" inputmode="numeric" placeholder="예: 12" style="flex:1;" />
+        <button class="modal-confirm" id="lookupBasketBtn" style="width:auto;padding:0 22px;">조회</button>
+      </div>
+    </div>
+    <div class="modal-msg" id="lookupBasketMsg" style="margin-top:6px;margin-bottom:0;"></div>
+
+    <div id="lookupResultSection" style="display:none;">
+      <div style="margin-top:16px;padding:16px 18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;font-size:16px;color:var(--navy);line-height:1.7;">
+        <div id="lookupBasketStatus">○ 현재 상태 : -</div>
+      </div>
+
+      <h3 class="sect" style="display:flex;justify-content:space-between;align-items:center;">
+        <span id="lookupResultTitle">○ 이력</span>
+        <button id="lookupBasketResetBtn" style="text-transform:none;letter-spacing:normal;background:var(--panel);color:var(--sub);border:1px solid var(--line);padding:6px 14px;border-radius:20px;font-size:12.5px;font-weight:700;cursor:pointer;">다시 조회</button>
+      </h3>
+      <div class="invtable-wrap full">
+        <table class="invtable">
+          <thead><tr><th>구분</th><th>일자</th><th>시간</th><th>사번</th><th>사유</th><th>수량</th><th>잔여재고</th></tr></thead>
+          <tbody id="lookupBasketBody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -624,6 +650,7 @@
     <div class="tab active user-tab" data-screen="home"><span class="icon" aria-hidden="true">🛒</span>대여/반납</div>
     <div class="tab user-tab" data-screen="userstatus"><span class="icon" aria-hidden="true">📋</span>대여현황</div>
     <div class="tab admin-tab" data-screen="status" style="display:none;"><span class="icon" aria-hidden="true">📦</span>재고관리</div>
+    <div class="tab admin-tab" data-screen="lookup" style="display:none;"><span class="icon" aria-hidden="true">🔍</span>이력조회</div>
     <div class="tab admin-tab" data-screen="rank" style="display:none;"><span class="icon" aria-hidden="true">🏆</span>이용실적</div>
     <div class="tab admin-tab" data-screen="staff" style="display:none;"><span class="icon" aria-hidden="true">⚙️</span>설정</div>
   </div>
@@ -774,9 +801,15 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
   const stockIn = document.getElementById('stockIn');
   const stockOut = document.getElementById('stockOut');
   const invBody = document.getElementById('invBody');
-  const invBasketFilterInput = document.getElementById('invBasketFilterInput');
-  const invBasketFilterClearBtn = document.getElementById('invBasketFilterClearBtn');
-  let invBasketFilter = '';
+  const lookupBasketInput = document.getElementById('lookupBasketInput');
+  const lookupBasketBtn = document.getElementById('lookupBasketBtn');
+  const lookupBasketMsg = document.getElementById('lookupBasketMsg');
+  const lookupResultSection = document.getElementById('lookupResultSection');
+  const lookupBasketStatus = document.getElementById('lookupBasketStatus');
+  const lookupResultTitle = document.getElementById('lookupResultTitle');
+  const lookupBasketBody = document.getElementById('lookupBasketBody');
+  const lookupBasketResetBtn = document.getElementById('lookupBasketResetBtn');
+  let lookupBasketNum = null;
   const userInvBody = document.getElementById('userInvBody');
   const userInvSectTitle = document.getElementById('userInvSectTitle');
   const userLookupEmpInput = document.getElementById('userLookupEmpInput');
@@ -1202,21 +1235,11 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     }
 
     // 입출고 이력 (관리자) - DB 컬럼 형태로 분리 표시 (마일리지 차감은 재고와 무관하므로 제외)
-    let invLog = state.log.filter(l => l.type !== 'mileageRedeem');
-    const basketFilterNum = invBasketFilter ? Number(invBasketFilter) : null;
-    if(basketFilterNum != null && !Number.isNaN(basketFilterNum)){
-      invLog = invLog.filter(l =>
-        Number(l.basketId) === basketFilterNum ||
-        (l.basketRange && String(l.basketRange).includes(String(basketFilterNum)))
-      );
-    }
-    const invLogShown = basketFilterNum != null ? invLog : invLog.slice(0,30);
-    if(invLogShown.length === 0){
-      invBody.innerHTML = basketFilterNum != null
-        ? `<tr><td colspan="8" class="invempty">${padBasket(basketFilterNum)}번 장바구니의 이력이 없습니다</td></tr>`
-        : `<tr><td colspan="8" class="invempty">입출고 이력이 없습니다</td></tr>`;
+    const invLog = state.log.filter(l => l.type !== 'mileageRedeem');
+    if(invLog.length === 0){
+      invBody.innerHTML = `<tr><td colspan="8" class="invempty">입출고 이력이 없습니다</td></tr>`;
     } else {
-      invBody.innerHTML = invLogShown.map(l => {
+      invBody.innerHTML = invLog.slice(0,30).map(l => {
         const isAdjust = l.type === 'adjust';
         const { cls, label } = classifyLogRow(l);
         const dateStr = l.at ? l.at.slice(0,10) : '-';
@@ -1235,6 +1258,47 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
           <td>${l.remain != null ? l.remain : '-'}</td>
         </tr>`;
       }).join('');
+    }
+
+    // 장바구니 번호로 이력 조회 (관리자)
+    if(lookupBasketNum == null){
+      lookupResultSection.style.display = 'none';
+    } else {
+      lookupResultSection.style.display = '';
+      const lb = state.baskets.find(b => b.id === lookupBasketNum);
+      if(!lb){
+        lookupBasketStatus.innerHTML = `○ 현재 상태 : 등록되지 않은 번호입니다`;
+      } else if(lb.status === 'rented'){
+        lookupBasketStatus.innerHTML = `○ 현재 상태 : <strong style="color:var(--rent);">대여중</strong> (사번 ${empLabel(state, lb.employeeId)}, 대여일시 ${fmtRentedAt(lb.rentedAt)})`;
+      } else {
+        lookupBasketStatus.innerHTML = `○ 현재 상태 : <strong style="color:var(--ok);">대여가능</strong>`;
+      }
+      lookupResultTitle.textContent = `○ ${padBasket(lookupBasketNum)}번 이력`;
+      const basketHistory = state.log.filter(l => l.type !== 'mileageRedeem' && (
+        Number(l.basketId) === lookupBasketNum ||
+        (l.basketRange && String(l.basketRange).includes(String(lookupBasketNum)))
+      ));
+      if(basketHistory.length === 0){
+        lookupBasketBody.innerHTML = `<tr><td colspan="7" class="invempty">${padBasket(lookupBasketNum)}번 장바구니의 이력이 없습니다</td></tr>`;
+      } else {
+        lookupBasketBody.innerHTML = basketHistory.map(l => {
+          const isAdjust = l.type === 'adjust';
+          const { cls, label } = classifyLogRow(l);
+          const dateStr = l.at ? l.at.slice(0,10) : '-';
+          const empCell = l.employeeId ? empLabel(state, l.employeeId) : '-';
+          const reasonCell = isAdjust ? l.reason : '-';
+          const qtyCell = l.qty != null ? l.qty : 1;
+          return `<tr>
+            <td><span class="iotag ${cls}">${label}</span></td>
+            <td>${dateStr}</td>
+            <td>${l.time}</td>
+            <td>${empCell}</td>
+            <td>${reasonCell}</td>
+            <td>${qtyCell}</td>
+            <td>${l.remain != null ? l.remain : '-'}</td>
+          </tr>`;
+        }).join('');
+      }
     }
 
     // 대여현황 화면 (사용자 모드) - 사번 조회 후에만 표시
@@ -1336,15 +1400,32 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     if(lastState) render(lastState);
   });
 
-  invBasketFilterInput.addEventListener('input', () => {
-    invBasketFilter = invBasketFilterInput.value.trim();
+  function doLookupBasket(){
+    const raw = lookupBasketInput.value.trim();
+    lookupBasketMsg.textContent = '';
+    if(!raw || Number.isNaN(Number(raw)) || Number(raw) < 1){
+      lookupBasketMsg.textContent = '장바구니 번호를 입력해 주세요.';
+      lookupBasketNum = null;
+      if(lastState) render(lastState);
+      return;
+    }
+    lookupBasketNum = Number(raw);
+    if(lastState) render(lastState);
+  }
+  lookupBasketBtn.addEventListener('click', doLookupBasket);
+  lookupBasketInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') doLookupBasket();
+  });
+  lookupBasketInput.addEventListener('input', () => {
+    lookupBasketInput.value = lookupBasketInput.value.replace(/\D/g,'');
+  });
+  lookupBasketResetBtn.addEventListener('click', () => {
+    lookupBasketNum = null;
+    lookupBasketInput.value = '';
+    lookupBasketMsg.textContent = '';
     if(lastState) render(lastState);
   });
-  invBasketFilterClearBtn.addEventListener('click', () => {
-    invBasketFilter = '';
-    invBasketFilterInput.value = '';
-    if(lastState) render(lastState);
-  });
+
 
   const PERIOD_LABELS = { today:'최근 24시간', '7d':'최근 7일', month:'이번달', all:'전체' };
 
