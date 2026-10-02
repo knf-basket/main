@@ -4,7 +4,7 @@
   "description": "KNF 장바구니 대여·반납 및 재고관리 앱",
   "start_url": "./index.html",
   "display": "standalone",
-  "orientation": "landscape",
+  "orientation": "portrait",
   "background_color": "#F3F4EF",
   "theme_color": "#16323F",
   "icons": [
