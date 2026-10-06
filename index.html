@@ -481,7 +481,7 @@
 
   <!-- 대여현황 (사용자 모드에서도 확인 가능) -->
   <div class="screen" id="screen-userstatus">
-    <h3 class="sect">내 대여현황·마일리지 조회</h3>
+    <h3 class="sect">내 대여현황 조회</h3>
     <div class="modal-field" style="margin-top:0;">
       <label>사번 (숫자 6자리)</label>
       <div style="display:flex;gap:8px;">
@@ -506,16 +506,6 @@
       <div style="margin-top:16px;padding:16px 18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;font-size:13px;color:var(--navy);line-height:1.9;">
         <div>○ 조회 기간 중 적립마일리지 : <strong id="userMileageEarned">0</strong>점</div>
         <div>○ 대여 중 : <strong id="userRentingList">없음</strong></div>
-      </div>
-
-      <h3 class="sect">
-        <span id="userInvSectTitle">○ 대여 내역</span>
-      </h3>
-      <div class="invtable-wrap no-hscroll full">
-        <table class="invtable compact">
-          <thead><tr><th>구분</th><th>일자</th><th>시간</th><th>장바구니 번호</th><th>마일리지</th></tr></thead>
-          <tbody id="userInvBody"></tbody>
-        </table>
       </div>
     </div>
   </div>
@@ -791,8 +781,6 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
   const lookupBasketBody = document.getElementById('lookupBasketBody');
   const lookupBasketResetBtn = document.getElementById('lookupBasketResetBtn');
   let lookupBasketNum = null;
-  const userInvBody = document.getElementById('userInvBody');
-  const userInvSectTitle = document.getElementById('userInvSectTitle');
   const userLookupEmpInput = document.getElementById('userLookupEmpInput');
   const userDateStartInput = document.getElementById('userDateStartInput');
   const userDateEndInput = document.getElementById('userDateEndInput');
@@ -1298,32 +1286,6 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
       userRentingList.textContent = rentingBaskets.length === 0
         ? '없음'
         : rentingBaskets.map(b => padBasket(b.id) + '번').join(', ');
-
-      // 대여 내역 (대여/반납/훼손분실/마일리지차감 통합 리스트, 사번+조회 기간 결과만)
-      let userVisibleLog = state.log.filter(l => l.type !== 'adjust' || isDisposeAction(l.action));
-      userVisibleLog = userVisibleLog.filter(l => l.employeeId === userLookupEmpId && withinDateRange(l));
-      if(userVisibleLog.length === 0){
-        userInvBody.innerHTML = `<tr><td colspan="5" class="invempty">해당 사번의 대여 내역이 없습니다</td></tr>`;
-      } else {
-        userInvBody.innerHTML = userVisibleLog.map(l => {
-          const isDispose = l.type === 'adjust';
-          const isMileage = l.type === 'mileageRedeem';
-          const cls = isDispose ? 'dispose' : isMileage ? 'dispose' : (l.action === '대여' ? 'out' : 'in');
-          const label = isDispose ? '훼손/분실' : isMileage ? '마일리지차감' : l.action;
-          const dateStr = l.at ? l.at.slice(0,10) : '-';
-          const timeStr = l.at ? new Date(l.at).toLocaleTimeString('ko-KR', { hour12:false, hour:'2-digit', minute:'2-digit' }) : (l.time || '-').slice(0,5);
-          const basketCell = isMileage ? '-' : (l.basketId ? padBasket(l.basketId) + '번' : (l.basketRange || '-'));
-          const pts = l.points != null ? l.points : null;
-          const ptsCell = pts == null ? '-' : (pts > 0 ? `+${pts}점` : `${pts}점`);
-          return `<tr>
-            <td><span class="iotag ${cls}">${label}</span></td>
-            <td>${dateStr}</td>
-            <td>${timeStr}</td>
-            <td>${basketCell}</td>
-            <td>${ptsCell}</td>
-          </tr>`;
-        }).join('');
-      }
     }
 
     lastState = state;
