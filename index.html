@@ -1568,13 +1568,10 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
       return;
     }
     empLookupResults.innerHTML = matches.map(b => {
-      const label = b.employeeId;
       return `<div class="qr-lookup-row" data-basket="${b.id}">
         <div class="qlr-top">
-          <span class="qlr-name">${label}</span>
           <span class="qlr-basket">장바구니 ${padBasket(b.id)}번</span>
         </div>
-        <div class="qlr-time">대여일시: ${fmtRentedAt(b.rentedAt)}</div>
       </div>`;
     }).join('');
     Array.from(empLookupResults.querySelectorAll('.qr-lookup-row')).forEach(row => {
