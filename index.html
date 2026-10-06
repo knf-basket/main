@@ -1563,8 +1563,22 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     }
     const state = await loadState();
     const matches = searchRentedBasketsByQuery(state, query);
+
+    // 최근 반납한 장바구니 번호 (참고용, 번호만 최대 3개 - 일시 등 다른 정보는 표시하지 않음)
+    const q6 = query.trim();
+    const rentedIds = new Set(matches.map(b => b.id));
+    const recentReturned = [];
+    for(const l of state.log){
+      if(recentReturned.length >= 3) break;
+      if(l.action === '반납' && l.employeeId === q6 && l.basketId && !rentedIds.has(l.basketId) && !recentReturned.includes(l.basketId)){
+        recentReturned.push(l.basketId);
+      }
+    }
+    const recentHtml = recentReturned.length === 0 ? '' :
+      `<div class="qr-lookup-empty" style="margin-top:10px;">최근 반납 (참고용) : ${recentReturned.map(id => padBasket(id) + '번').join(', ')}</div>`;
+
     if(matches.length === 0){
-      empLookupResults.innerHTML = '<div class="qr-lookup-empty">일치하는 대여 중인 장바구니가 없습니다.</div>';
+      empLookupResults.innerHTML = '<div class="qr-lookup-empty">일치하는 대여 중인 장바구니가 없습니다.</div>' + recentHtml;
       return;
     }
     empLookupResults.innerHTML = matches.map(b => {
@@ -1573,7 +1587,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
           <span class="qlr-basket">장바구니 ${padBasket(b.id)}번</span>
         </div>
       </div>`;
-    }).join('');
+    }).join('') + recentHtml;
     Array.from(empLookupResults.querySelectorAll('.qr-lookup-row')).forEach(row => {
       row.addEventListener('click', () => {
         basketDigits = row.dataset.basket;
