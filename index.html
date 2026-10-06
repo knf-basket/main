@@ -1754,7 +1754,10 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
       state.log.unshift(logEntry);
       if(!(await saveState(state))) return;
       render(state);
-      showResult(true, `장바구니 ${padBasket(basketNum)}번이 ${reportReason}(으)로 접수되었습니다. 신고해 주셔서 감사합니다. 해당 장바구니는 담당자가 회수하여 자체 처리하니, 별도로 반납하거나 조치하지 않으셔도 됩니다.`);
+      const reportTail = reportReason === '훼손'
+        ? '훼손된 장바구니는 신고자께서 자체 처리해 주시기 바랍니다. 별도로 반납하지 않으셔도 됩니다.'
+        : '';
+      showResult(true, `장바구니 ${padBasket(basketNum)}번이 ${reportReason}(으)로 접수되었습니다. 신고해 주셔서 감사합니다.${reportTail ? ' ' + reportTail : ''}`);
     }
   }
 
