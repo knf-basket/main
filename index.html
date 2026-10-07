@@ -444,8 +444,8 @@
           <div>
             <strong style="color:#1565C0;">반납</strong>
             <div style="margin:4px 0 0 4px;display:flex;flex-direction:column;gap:3px;">
-              <div>· 1시간 이내 — 0점</div>
-              <div>· 1~24시간 — 3점</div>
+              <div>· 30분 이내 — 0점</div>
+              <div>· 30분~24시간 — 3점</div>
               <div>· 24시간 초과~5일 이내 — 2점</div>
               <div>· 5일 초과 — 1점</div>
             </div>
@@ -605,7 +605,7 @@
         <button id="exportRankCsvBtn" style="text-transform:none;letter-spacing:normal;background:var(--navy);color:#fff;border:none;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;">⬇ 이용실적 CSV 다운로드</button>
       </div>
     </h3>
-    <div style="font-size:12px;color:var(--sub);margin-bottom:14px;line-height:1.6;">마일리지 산정기준 = 대여 1점/건 + 반납 시 대여시간 기준(1시간 이내 0점 · 1~24시간 3점 · 24시간 초과~5일 이내 2점 · 5일 초과 1점)<br>대여횟수·반납횟수·적립마일리지 모두 선택한 기간 기준으로 합계됩니다.</div>
+    <div style="font-size:12px;color:var(--sub);margin-bottom:14px;line-height:1.6;">마일리지 산정기준 = 대여 1점/건 + 반납 시 대여시간 기준(30분 이내 0점 · 30분~24시간 3점 · 24시간 초과~5일 이내 2점 · 5일 초과 1점)<br>대여횟수·반납횟수·적립마일리지 모두 선택한 기간 기준으로 합계됩니다.</div>
     <div class="periodrow" id="periodRow">
       <button class="periodbtn" data-period="today">최근 24시간</button>
       <button class="periodbtn" data-period="7d">최근 7일</button>
@@ -1862,9 +1862,9 @@
   const RENT_POINT = 1; // 대여 시 건당 1점
 
   // 반납 점수: 대여~반납 경과시간(분) 기준
-  //  1시간 이내: 0점 / 1시간초과~24시간이내: 3점 / 24시간초과~5일이내: 2점 / 5일 초과: 1점
+  //  30분 이내: 0점 / 30분초과~24시간이내: 3점 / 24시간초과~5일이내: 2점 / 5일 초과: 1점
   function calcReturnPoints(mins){
-    if(mins <= 60) return 0;
+    if(mins <= 30) return 0;
     if(mins <= 1440) return 3;
     if(mins <= 7200) return 2;
     return 1;
@@ -2507,7 +2507,7 @@
       ? `${customStartInput.value} ~ ${customEndInput.value}`
       : (PERIOD_LABELS[rankPeriod] || '전체');
     rows.push(['이용실적', `조회기간: ${periodLabel}`]);
-    rows.push(['마일리지 산정기준', '대여 1점/건, 반납 1시간이내 0점 / 1~24시간 3점 / 24시간초과~5일이내 2점 / 5일초과 1점']);
+    rows.push(['마일리지 산정기준', '대여 1점/건, 반납 30분이내 0점 / 30분~24시간 3점 / 24시간초과~5일이내 2점 / 5일초과 1점']);
     rows.push(['참고', '대여횟수·반납횟수·적립마일리지 모두 조회기간 기준']);
     rows.push([]);
     rows.push(['순위','부서','대여횟수','반납횟수','적립마일리지','누적반납횟수','마일리지지급대상']);
