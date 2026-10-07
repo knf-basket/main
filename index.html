@@ -673,8 +673,6 @@
         <div style="font-size:12px;color:var(--sub);margin-top:-6px;">이력 화면의 기록을 모두 삭제합니다. 재고 상태와 실적 집계는 유지됩니다.</div>
         <button class="danger-btn" id="resetStatsBtn">이용실적(마일리지) 초기화</button>
         <div style="font-size:12px;color:var(--sub);margin-top:-6px;">부서별 누적 실적/마일리지를 모두 삭제합니다. 재고 상태와 이력은 유지됩니다.</div>
-        <button class="danger-btn" id="resetAllBtn">전체 초기화 (사번 → 부서 전환용)</button>
-        <div style="font-size:12px;color:var(--sub);margin-top:-6px;">모든 장바구니를 "대여 가능"으로 되돌리고, 이력·이용실적·직원명단(예전 사번 데이터)을 모두 삭제합니다. 부서 방식으로 처음 전환할 때 한 번 실행하세요.</div>
       </div>
     </div>
   </div>
@@ -944,7 +942,6 @@
   const resetBasketsBtn = document.getElementById('resetBasketsBtn');
   const resetLogBtn = document.getElementById('resetLogBtn');
   const resetStatsBtn = document.getElementById('resetStatsBtn');
-  const resetAllBtn = document.getElementById('resetAllBtn');
 
   // ==== 관리자 비밀번호 ====
   // Firebase 계정 로그인 대신 단순 비밀번호 방식으로 변경했습니다.
@@ -1862,26 +1859,6 @@
         if(!(await saveState(state))) return;
         render(state);
         showAlert('초기화 완료', '이용실적(마일리지)이 모두 삭제되었습니다. (초기화 전 데이터가 백업 파일로 다운로드되었습니다)');
-      },
-      () => {}
-    );
-  });
-
-  resetAllBtn.addEventListener('click', () => {
-    showYesNo(
-      '전체 초기화',
-      '모든 장바구니를 "대여 가능"으로 되돌리고, 이력·이용실적·직원명단(예전 사번 데이터)을 모두 삭제합니다. 되돌릴 수 없습니다. 계속하시겠습니까?',
-      '예, 초기화합니다', '아니오',
-      async () => {
-        const state = await loadState();
-        downloadJsonBackup(state, '전체초기화전');
-        state.baskets.forEach(b => { b.status = 'available'; b.dept = null; b.rentedAt = null; });
-        state.log = [];
-        state.users = {};
-        state.employees = {};
-        if(!(await saveState(state))) return;
-        render(state);
-        showAlert('초기화 완료', '전체 데이터가 초기화되었습니다. 초기화 전 데이터가 백업 파일로 다운로드되었으니, 사번이 들어 있는 이 파일은 확인 후 안전하게 삭제해 주세요.');
       },
       () => {}
     );
