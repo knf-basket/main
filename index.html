@@ -268,6 +268,15 @@
   .deptbtn:active{transform:scale(.98);}
   .deptbtn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
   .deptselect{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;background:#fff;color:var(--navy);}
+  .deptsearch{width:100%;box-sizing:border-box;padding:13px 14px;font-size:17px;font-family:inherit;border:1.5px solid var(--line);border-radius:12px;margin:0 0 10px;background:#fff;color:var(--navy);}
+  .deptsearch:focus{outline:2px solid var(--gold);outline-offset:1px;}
+  .deptempty{grid-column:1 / -1;text-align:center;color:var(--sub);font-size:15px;padding:18px 0;}
+  .deptrow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 2px;border-bottom:1px solid var(--line);font-size:15px;color:var(--navy);}
+  .deptrow .dn{flex:1;min-width:0;word-break:break-all;font-weight:700;}
+  .deptrow .da{display:flex;gap:6px;flex-shrink:0;}
+  .deptrow button{text-transform:none;letter-spacing:normal;background:var(--panel);color:var(--navy);border:1px solid var(--line);padding:6px 12px;border-radius:16px;font-size:12.5px;font-weight:700;cursor:pointer;}
+  .deptrow button.del{color:#B0473B;}
+  .deptrow input{flex:1;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;}
   .lookup-btn{
     width:100%;background:#fff;border:1.5px solid var(--navy);color:var(--navy);
     padding:14px 12px;margin-bottom:11px;border-radius:12px;font-size:16px;font-weight:700;
@@ -464,6 +473,7 @@
         <div class="label">부서</div>
         <div class="digits" id="empDigitsDisplay">선택하세요</div>
       </div>
+      <input type="search" id="deptSearchInput" class="deptsearch" placeholder="🔍 부서 검색 (예: 생산, ㅅㅅ)" autocomplete="off" style="display:none;" />
       <div class="deptgrid" id="deptGrid" style="display:none;"></div>
       <div class="keypad" id="keypad"></div>
       <div class="actionrow">
@@ -489,7 +499,7 @@
     <div class="modal-field" style="margin-top:0;">
       <label>부서</label>
       <div style="display:flex;gap:8px;">
-        <select id="userLookupEmpInput" class="deptselect" style="flex:1;"></select>
+        <input type="text" id="userLookupEmpInput" class="deptselect" list="deptDatalist" placeholder="부서 검색 또는 선택" autocomplete="off" style="flex:1;" />
       </div>
     </div>
     <div class="modal-field">
@@ -624,6 +634,23 @@
       </div>
     </div>
 
+    <h3 class="sect" style="margin-top:22px;display:flex;justify-content:space-between;align-items:center;">
+      <span>부서 관리</span>
+      <span id="deptAdminCount" style="font-weight:700;color:var(--sub);"></span>
+    </h3>
+    <div style="font-size:12px;color:var(--sub);margin-bottom:10px;line-height:1.5;">대여/반납/신고 화면에 표시되는 부서 목록입니다. 추가·수정·삭제하면 모든 기기에 바로 반영됩니다. 부서명을 수정하면 기존 이력과 이용실적도 새 이름으로 함께 바뀝니다.</div>
+    <div class="fieldbox static" style="cursor:default;">
+      <div style="width:100%;display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="deptAddInput" class="deptselect" placeholder="새 부서명 (20자 이내)" maxlength="20" autocomplete="off" style="flex:1;" />
+          <button class="modal-confirm" id="deptAddBtn" style="width:auto;padding:0 18px;">추가</button>
+        </div>
+        <div class="modal-msg" id="deptAdminMsg" style="margin:0;"></div>
+        <div id="deptAdminList"></div>
+        <button class="modal-cancel" id="deptSortBtn" style="width:100%;">가나다순 정렬</button>
+      </div>
+    </div>
+
     <h3 class="sect" style="margin-top:22px;">데이터 초기화</h3>
     <div style="font-size:12px;color:var(--sub);margin-bottom:10px;line-height:1.5;">아래 작업은 되돌릴 수 없습니다. 실행 전 반드시 확인해 주세요.</div>
     <div class="fieldbox static" style="cursor:default;">
@@ -649,6 +676,8 @@
     <div class="tab admin-tab" data-screen="staff" style="display:none;"><span class="icon" aria-hidden="true">⚙️</span>설정</div>
   </div>
 </div>
+
+<datalist id="deptDatalist"></datalist>
 
 <div class="modal-overlay" id="pinModal">
   <div class="modal-card" id="pinCard">
@@ -729,7 +758,7 @@
     <div class="modal-title">대여 부서로 장바구니 조회</div>
     <div class="modal-field">
       <label>대여 부서</label>
-      <select id="empLookupInput" class="deptselect"></select>
+      <input type="text" id="empLookupInput" class="deptselect" list="deptDatalist" placeholder="부서 검색 또는 선택" autocomplete="off" />
       <button class="modal-confirm" id="empLookupSearchBtn" style="width:100%;margin-top:8px;">조회</button>
       <div id="empLookupResults" style="margin-top:10px;text-align:left;"></div>
     </div>
@@ -745,7 +774,7 @@
     <div class="modal-msg-body" id="basketEditBody">-</div>
     <div class="modal-field" id="basketEditEmpField" style="display:none;">
       <label>대여 부서</label>
-      <select id="basketEditEmpInput" class="deptselect"></select>
+      <input type="text" id="basketEditEmpInput" class="deptselect" list="deptDatalist" placeholder="부서 검색 또는 선택" autocomplete="off" />
     </div>
     <div class="modal-msg" id="basketEditMsg"></div>
     <div class="modal-actions">
@@ -828,6 +857,13 @@
   const empLookupCancelBtn = document.getElementById('empLookupCancelBtn');
   const keypad = document.getElementById('keypad');
   const deptGrid = document.getElementById('deptGrid');
+  const deptSearchInput = document.getElementById('deptSearchInput');
+  const deptAdminList = document.getElementById('deptAdminList');
+  const deptAdminCount = document.getElementById('deptAdminCount');
+  const deptAddInput = document.getElementById('deptAddInput');
+  const deptAddBtn = document.getElementById('deptAddBtn');
+  const deptAdminMsg = document.getElementById('deptAdminMsg');
+  const deptSortBtn = document.getElementById('deptSortBtn');
   const inputBackBtn = document.getElementById('inputBackBtn');
   const inputNextBtn = document.getElementById('inputNextBtn');
   const resultIcon = document.getElementById('resultIcon');
@@ -906,16 +942,10 @@
 
   let adminMode = false;
 
-  // ※ 부서 목록: 실제 사용하는 부서명으로 수정하세요. (대여/반납/신고 화면에서 이 목록으로 선택합니다)
-  //   부서명에는 '.' 와 '/' 를 쓰지 마세요. 이름을 바꾸면 이전 이력과 부서가 따로 집계됩니다.
-  const DEPARTMENTS = ['ESG협력부','경영지원부','기술개발부','생산부','품질보증부','안전환경부','연료설계부','기타'];
-  function fillDeptSelect(sel, placeholder){
-    sel.innerHTML = '<option value="">' + placeholder + '</option>' + DEPARTMENTS.map(d => '<option value="' + d + '">' + d + '</option>').join('');
-  }
-  ['userLookupEmpInput','empLookupInput','basketEditEmpInput'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) fillDeptSelect(el, '부서 선택');
-  });
+  // 부서 목록: 관리자 모드 > 설정 > 부서 관리에서 수정합니다. (Firestore 'departments' 문서에 저장)
+  // 아래 값은 서버에 목록이 아직 없을 때만 쓰는 기본값입니다.
+  const DEFAULT_DEPARTMENTS = ['ESG협력부','경영지원부','기술개발부','생산부','품질보증부','안전환경부','연료설계부','기타'];
+  let DEPARTMENTS = DEFAULT_DEPARTMENTS.slice();
   const BASKET_MAX = 4; // 최대 4자리(최대 9999개까지 대응 - 관리자 등록 범위와 여유있게 일치)
   const OVERDUE_MS = 7 * 24 * 60 * 60 * 1000; // 장기 미반납 기준: 7일(168시간) 초과
   let flowMode = null;      // '대여' | '반납' | '훼손분실'
@@ -943,6 +973,7 @@
   const FB_LOG = FB_COL.doc('log');
   const FB_USERSTATS = FB_COL.doc('userStats');
   const FB_ADMIN = FB_COL.doc('adminConfig');
+  const FB_DEPTS = FB_COL.doc('departments');
   const LOG_MAX_KEEP = 2000; // 문서 크기 제한(1MB) 대비, 오래된 로그는 자동으로 정리
 
   // ==== 개인정보 보호: 예전에 저장된 직원 성명 데이터 일회성 정리 ====
@@ -1068,6 +1099,12 @@
     fbLatest.users = snap.exists ? (snap.data().users || {}) : {};
     tryRenderFromLatest();
   }, (err) => console.error('실시간 동기화 오류(userStats)', err));
+  // 부서 목록 실시간 동기화 (관리자가 바꾸면 모든 기기에 반영)
+  FB_DEPTS.onSnapshot((snap) => {
+    const list = snap.exists ? snap.data().list : null;
+    const clean = Array.isArray(list) ? list.filter(x => typeof x === 'string' && x.trim()) : [];
+    applyDepartments(clean.length ? clean : DEFAULT_DEPARTMENTS.slice());
+  }, (err) => console.error('실시간 동기화 오류(departments)', err));
   function fmtTime(d){ return d.toLocaleTimeString('ko-KR', { hour12:false }); }
   function fmtRentedAt(iso){
     if(!iso) return '-';
@@ -1110,6 +1147,7 @@
     const deptMode = activeField === 'emp';
     keypad.style.display = deptMode ? 'none' : '';
     deptGrid.style.display = deptMode ? '' : 'none';
+    deptSearchInput.style.display = deptMode ? '' : 'none';
   }
 
   empBox.addEventListener('click', () => { activeField = 'emp'; updateFieldFocus(); });
@@ -1134,14 +1172,174 @@
     keypad.appendChild(el);
   });
 
-  // 부서 선택 버튼
-  DEPARTMENTS.forEach(d => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'deptbtn';
-    b.textContent = d;
-    b.addEventListener('click', () => { deptValue = d; renderFields(); });
-    deptGrid.appendChild(b);
+  // ---- 부서 선택: 검색 + 버튼 ----
+  const CHOSEONG = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+  function toChoseong(str){
+    return Array.from(str).map(ch => {
+      const c = ch.charCodeAt(0);
+      return (c >= 0xAC00 && c <= 0xD7A3) ? CHOSEONG[Math.floor((c - 0xAC00) / 588)] : ch;
+    }).join('');
+  }
+  // 검색어가 부서명에 포함되거나, 초성만 입력했을 때 초성이 일치하면 표시
+  function deptMatches(name, query){
+    const q = query.trim().toLowerCase();
+    if(!q) return true;
+    if(name.toLowerCase().includes(q)) return true;
+    if(/^[ㄱ-ㅎ]+$/.test(q)) return toChoseong(name).includes(q);
+    return false;
+  }
+  function escHtml(v){
+    return String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function renderDeptButtons(){
+    deptGrid.innerHTML = '';
+    const list = DEPARTMENTS.filter(d => deptMatches(d, deptSearchInput.value));
+    if(list.length === 0){
+      const e = document.createElement('div');
+      e.className = 'deptempty';
+      e.textContent = '검색 결과가 없습니다';
+      deptGrid.appendChild(e);
+      return;
+    }
+    list.forEach(d => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'deptbtn' + (d === deptValue ? ' active' : '');
+      b.textContent = d;
+      b.addEventListener('click', () => { deptValue = d; renderFields(); });
+      deptGrid.appendChild(b);
+    });
+  }
+  deptSearchInput.addEventListener('input', renderDeptButtons);
+
+  function applyDepartments(list){
+    DEPARTMENTS = list;
+    renderDeptButtons();
+    const dl = document.getElementById('deptDatalist');
+    if(dl) dl.innerHTML = DEPARTMENTS.map(d => '<option value="' + escHtml(d) + '"></option>').join('');
+    renderDeptAdminList();
+  }
+
+  // ---- 관리자: 부서 관리 (추가 / 수정 / 삭제 / 정렬) ----
+  let editingDept = null;
+  const DEPT_NAME_MAX = 20;
+  const DEPT_LIST_MAX = 100;
+
+  function renderDeptAdminList(){
+    deptAdminCount.textContent = `${DEPARTMENTS.length}개`;
+    deptAdminList.innerHTML = DEPARTMENTS.map(d => {
+      const e = escHtml(d);
+      if(d === editingDept){
+        return `<div class="deptrow" data-name="${e}"><input type="text" maxlength="${DEPT_NAME_MAX}" value="${e}" /><span class="da"><button data-act="save">저장</button><button data-act="cancel">취소</button></span></div>`;
+      }
+      return `<div class="deptrow" data-name="${e}"><span class="dn">${e}</span><span class="da"><button data-act="edit">수정</button><button class="del" data-act="del">삭제</button></span></div>`;
+    }).join('');
+  }
+
+  function checkDeptName(name, ignoreName){
+    if(!name) return '부서명을 입력해 주세요.';
+    if(name.length > DEPT_NAME_MAX) return `부서명은 ${DEPT_NAME_MAX}자 이내로 입력해 주세요.`;
+    if(/[.\/<>"'&]/.test(name)) return '부서명에는 . / < > " \' & 문자를 쓸 수 없습니다.';
+    if(DEPARTMENTS.some(d => d !== ignoreName && d.toLowerCase() === name.toLowerCase())) return '이미 있는 부서명입니다.';
+    return '';
+  }
+
+  async function saveDepartments(list){
+    try{
+      await FB_DEPTS.set({ list });
+      return true;
+    }catch(e){
+      console.error('부서 목록 저장 실패', e);
+      showAlert('저장 실패', '부서 목록을 저장하지 못했습니다. 네트워크 연결과 Firestore 규칙(departments 문서 허용)을 확인해 주세요.');
+      return false;
+    }
+  }
+
+  deptAddBtn.addEventListener('click', async () => {
+    const name = deptAddInput.value.trim();
+    const err = checkDeptName(name, null);
+    if(err){ deptAdminMsg.textContent = err; return; }
+    if(DEPARTMENTS.length >= DEPT_LIST_MAX){ deptAdminMsg.textContent = `부서는 최대 ${DEPT_LIST_MAX}개까지 등록할 수 있습니다.`; return; }
+    deptAdminMsg.textContent = '';
+    const list = DEPARTMENTS.concat(name);
+    if(await saveDepartments(list)){
+      deptAddInput.value = '';
+      applyDepartments(list);
+    }
+  });
+  deptAddInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') deptAddBtn.click(); });
+
+  deptSortBtn.addEventListener('click', async () => {
+    const list = DEPARTMENTS.slice().sort((a,b) => a.localeCompare(b, 'ko'));
+    if(await saveDepartments(list)) applyDepartments(list);
+  });
+
+  async function renameDept(oldName, newName){
+    // 기존 대여 중 표시·이력·이용실적의 부서명도 함께 바꿔 집계가 끊기지 않게 합니다.
+    const state = await loadState();
+    state.baskets.forEach(b => { if(b.dept === oldName) b.dept = newName; });
+    state.log.forEach(l => { if(l.dept === oldName) l.dept = newName; });
+    if(state.users[oldName]){
+      const o = state.users[oldName];
+      const t = state.users[newName] || { rentCount:0, returnCount:0 };
+      t.rentCount = (t.rentCount || 0) + (o.rentCount || 0);
+      t.returnCount = (t.returnCount || 0) + (o.returnCount || 0);
+      state.users[newName] = t;
+      delete state.users[oldName];
+    }
+    if(!(await saveState(state))) return;
+    const list = DEPARTMENTS.map(d => d === oldName ? newName : d);
+    if(!(await saveDepartments(list))) return;
+    editingDept = null;
+    applyDepartments(list);
+    render(state);
+  }
+
+  deptAdminList.addEventListener('click', async (e) => {
+    const btn = e.target.closest ? e.target.closest('button') : null;
+    if(!btn) return;
+    const row = btn.closest('.deptrow');
+    if(!row) return;
+    const name = row.dataset.name;
+    const act = btn.dataset.act;
+    deptAdminMsg.textContent = '';
+    if(act === 'edit'){
+      editingDept = name;
+      renderDeptAdminList();
+    } else if(act === 'cancel'){
+      editingDept = null;
+      renderDeptAdminList();
+    } else if(act === 'save'){
+      const input = row.querySelector('input');
+      const newName = input ? input.value.trim() : '';
+      if(newName === name){ editingDept = null; renderDeptAdminList(); return; }
+      const err = checkDeptName(newName, name);
+      if(err){ deptAdminMsg.textContent = err; return; }
+      showYesNo(
+        '부서명 수정',
+        `"${name}" → "${newName}"(으)로 변경합니다. 기존 이력과 이용실적의 부서명도 함께 바뀝니다. 계속하시겠습니까?`,
+        '예, 변경합니다', '아니오',
+        () => { renameDept(name, newName); },
+        () => {}
+      );
+    } else if(act === 'del'){
+      if(DEPARTMENTS.length <= 1){ deptAdminMsg.textContent = '부서는 최소 1개가 필요합니다.'; return; }
+      const state = lastState || await loadState();
+      if(state.baskets.some(b => b.status === 'rented' && b.dept === name)){
+        showAlert('삭제할 수 없음', `"${name}"은(는) 현재 대여 중인 장바구니가 있어 삭제할 수 없습니다. 반납된 뒤에 삭제해 주세요.`);
+        return;
+      }
+      showYesNo(
+        '부서 삭제',
+        `"${name}"을(를) 목록에서 삭제합니다. 기존 이력과 이용실적은 그대로 남습니다. 계속하시겠습니까?`,
+        '예, 삭제합니다', '아니오',
+        async () => {
+          const list = DEPARTMENTS.filter(d => d !== name);
+          if(await saveDepartments(list)) applyDepartments(list);
+        },
+        () => {}
+      );
+    }
   });
 
   function showHomeStep(name){
@@ -1151,6 +1349,8 @@
 
   function resetInputFields(){
     deptValue = ''; basketDigits = ''; activeField = 'emp'; inputPhase = 'basket';
+    deptSearchInput.value = '';
+    renderDeptButtons();
     basketBox.style.display = 'none';
     basketConfirmedText.style.display = 'none';
     empBox.style.display = 'none';
@@ -2459,6 +2659,7 @@
 
 
 
+  applyDepartments(DEFAULT_DEPARTMENTS.slice());
   renderFields();
   updateFieldFocus();
   loadState().then(render);
