@@ -648,6 +648,18 @@
         <div class="modal-msg" id="deptAdminMsg" style="margin:0;"></div>
         <div id="deptAdminList"></div>
         <button class="modal-cancel" id="deptSortBtn" style="width:100%;">가나다순 정렬</button>
+        <div style="border-top:1px solid var(--line);padding-top:10px;">
+          <div style="font-size:12.5px;color:var(--sub);font-weight:700;margin-bottom:6px;">엑셀/CSV 파일로 한 번에 등록</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="deptUploadMode" class="deptselect" style="flex:1;min-width:140px;width:auto;">
+              <option value="add">추가 (이미 있는 부서 제외)</option>
+              <option value="replace">전체 교체</option>
+            </select>
+            <button class="modal-confirm" id="deptUploadBtn" style="width:auto;padding:0 18px;">📄 파일 업로드</button>
+          </div>
+          <input type="file" id="deptFileInput" accept=".xlsx,.xls,.csv,.txt" style="display:none;" />
+          <div style="font-size:12px;color:var(--sub);margin-top:6px;line-height:1.5;">엑셀(.xlsx, .xls)·CSV·텍스트 파일의 첫 번째 열에 부서명을 한 줄씩 적어 올려 주세요. 첫 줄이 "부서" 또는 "부서명"이면 머리글로 보고 제외합니다.</div>
+        </div>
       </div>
     </div>
 
@@ -864,6 +876,9 @@
   const deptAddBtn = document.getElementById('deptAddBtn');
   const deptAdminMsg = document.getElementById('deptAdminMsg');
   const deptSortBtn = document.getElementById('deptSortBtn');
+  const deptUploadMode = document.getElementById('deptUploadMode');
+  const deptUploadBtn = document.getElementById('deptUploadBtn');
+  const deptFileInput = document.getElementById('deptFileInput');
   const inputBackBtn = document.getElementById('inputBackBtn');
   const inputNextBtn = document.getElementById('inputNextBtn');
   const resultIcon = document.getElementById('resultIcon');
@@ -1236,10 +1251,15 @@
     }).join('');
   }
 
-  function checkDeptName(name, ignoreName){
+  function deptNameProblem(name){
     if(!name) return '부서명을 입력해 주세요.';
     if(name.length > DEPT_NAME_MAX) return `부서명은 ${DEPT_NAME_MAX}자 이내로 입력해 주세요.`;
     if(/[.\/<>"'&]/.test(name)) return '부서명에는 . / < > " \' & 문자를 쓸 수 없습니다.';
+    return '';
+  }
+  function checkDeptName(name, ignoreName){
+    const p = deptNameProblem(name);
+    if(p) return p;
     if(DEPARTMENTS.some(d => d !== ignoreName && d.toLowerCase() === name.toLowerCase())) return '이미 있는 부서명입니다.';
     return '';
   }
@@ -1272,6 +1292,111 @@
   deptSortBtn.addEventListener('click', async () => {
     const list = DEPARTMENTS.slice().sort((a,b) => a.localeCompare(b, 'ko'));
     if(await saveDepartments(list)) applyDepartments(list);
+  });
+
+  // ---- 엑셀/CSV 업로드 ----
+  function loadXlsxLib(){
+    return new Promise((resolve, reject) => {
+      if(window.XLSX) return resolve(window.XLSX);
+      const sc = document.createElement('script');
+      sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      sc.onload = () => window.XLSX ? resolve(window.XLSX) : reject(new Error('XLSX 없음'));
+      sc.onerror = () => reject(new Error('엑셀 처리 도구를 불러오지 못했습니다. 인터넷 연결을 확인하시거나, 엑셀을 CSV로 저장해서 올려 주세요.'));
+      document.head.appendChild(sc);
+    });
+  }
+  function decodeText(buf){
+    // 엑셀의 "CSV(쉼표로 분리)"는 EUC-KR, "CSV UTF-8"은 UTF-8 이므로 둘 다 처리
+    try{ return new TextDecoder('utf-8', { fatal:true }).decode(buf); }
+    catch(e){ return new TextDecoder('euc-kr').decode(buf); }
+  }
+  async function readDeptFile(file){
+    const fname = (file.name || '').toLowerCase();
+    const buf = await file.arrayBuffer();
+    let cells;
+    if(/\.(csv|txt)$/.test(fname)){
+      cells = decodeText(buf).replace(/^\uFEFF/, '').split(/\r?\n/).map(line => line.split(/[,\t]/)[0].replace(/^"|"$/g, ''));
+    } else if(/\.(xlsx|xls)$/.test(fname)){
+      const XLSX = await loadXlsxLib();
+      const wb = XLSX.read(buf, { type:'array' });
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, defval:'' });
+      cells = rows.map(r => r[0]);
+    } else {
+      throw new Error('지원하지 않는 파일 형식입니다. (.xlsx, .xls, .csv, .txt)');
+    }
+    const names = cells.map(c => String(c == null ? '' : c).trim()).filter(Boolean);
+    if(names.length && ['부서','부서명','부서 명','department'].includes(names[0].toLowerCase())) names.shift();
+    return names;
+  }
+
+  deptUploadBtn.addEventListener('click', () => {
+    deptFileInput.value = '';
+    deptFileInput.click();
+  });
+  deptFileInput.addEventListener('change', async () => {
+    const file = deptFileInput.files && deptFileInput.files[0];
+    if(!file) return;
+    deptAdminMsg.textContent = '';
+    let names;
+    try{
+      names = await readDeptFile(file);
+    }catch(e){
+      console.error('부서 파일 읽기 실패', e);
+      showAlert('업로드 실패', (e && e.message) ? e.message : '파일을 읽지 못했습니다.');
+      return;
+    }
+    const valid = [], invalid = [], seen = new Set();
+    names.forEach(n => {
+      if(deptNameProblem(n)){ invalid.push(n); return; }
+      const k = n.toLowerCase();
+      if(seen.has(k)) return;
+      seen.add(k);
+      valid.push(n);
+    });
+    if(valid.length === 0){
+      showAlert('업로드 실패', '읽을 수 있는 부서명이 없습니다. 첫 번째 열에 부서명이 한 줄씩 적혀 있는지 확인해 주세요.');
+      return;
+    }
+    let finalList, summary;
+    if(deptUploadMode.value === 'replace'){
+      finalList = valid;
+      const state = lastState || await loadState();
+      const keep = new Set(finalList.map(d => d.toLowerCase()));
+      const lost = state.baskets.filter(b => b.status === 'rented' && b.dept && !keep.has(String(b.dept).toLowerCase())).map(b => b.dept);
+      if(lost.length){
+        showAlert('교체할 수 없음', `현재 대여 중인 장바구니가 있는 부서(${Array.from(new Set(lost)).join(', ')})가 새 목록에 없습니다. 해당 부서를 파일에 포함하거나, 반납된 뒤 다시 시도해 주세요.`);
+        return;
+      }
+      summary = `부서 목록을 업로드한 ${valid.length}개로 전체 교체합니다. (현재 ${DEPARTMENTS.length}개)`;
+    } else {
+      const exist = new Set(DEPARTMENTS.map(d => d.toLowerCase()));
+      const added = valid.filter(n => !exist.has(n.toLowerCase()));
+      if(added.length === 0){
+        showAlert('추가할 부서 없음', '파일의 부서가 모두 이미 등록되어 있습니다.');
+        return;
+      }
+      finalList = DEPARTMENTS.concat(added);
+      summary = `새 부서 ${added.length}개를 추가합니다. (이미 있는 ${valid.length - added.length}개는 제외)`;
+    }
+    if(finalList.length > DEPT_LIST_MAX){
+      showAlert('업로드 실패', `부서는 최대 ${DEPT_LIST_MAX}개까지 등록할 수 있습니다. (적용 시 ${finalList.length}개)`);
+      return;
+    }
+    if(invalid.length){
+      summary += ` 형식이 맞지 않아 제외되는 항목이 ${invalid.length}개 있습니다. (${invalid.slice(0,3).join(', ')}${invalid.length > 3 ? ' 등' : ''})`;
+    }
+    showYesNo(
+      '부서 목록 업로드',
+      summary + ' 계속하시겠습니까?',
+      '예, 적용합니다', '아니오',
+      async () => {
+        if(await saveDepartments(finalList)){
+          applyDepartments(finalList);
+          showAlert('업로드 완료', `부서 목록이 ${finalList.length}개로 저장되었습니다.`);
+        }
+      },
+      () => {}
+    );
   });
 
   async function renameDept(oldName, newName){
