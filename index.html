@@ -263,14 +263,16 @@
     white-space:nowrap;
   }
   .mini-btn:hover{background:#EEF1F6;}
-  .deptgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:4px 0 12px;}
-  .deptbtn{padding:16px 8px;font-size:17px;font-weight:700;font-family:inherit;border:1.5px solid var(--line);border-radius:12px;background:var(--panel);color:var(--navy);cursor:pointer;}
-  .deptbtn:active{transform:scale(.98);}
-  .deptbtn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .deptlist{border:1.5px solid var(--line);border-radius:12px;background:var(--panel);max-height:42vh;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:0 0 12px;}
+  .deptitem{padding:14px 16px;font-size:17px;color:var(--navy);border-bottom:1px solid var(--line);cursor:pointer;}
+  .deptitem:last-child{border-bottom:none;}
+  .deptitem b{background:#FFF1BF;font-weight:800;}
+  .deptitem.active{background:var(--navy);color:#fff;}
+  .deptitem.active b{background:none;color:#FFD66B;}
   .deptselect{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;background:#fff;color:var(--navy);}
   .deptsearch{width:100%;box-sizing:border-box;padding:13px 14px;font-size:17px;font-family:inherit;border:1.5px solid var(--line);border-radius:12px;margin:0 0 10px;background:#fff;color:var(--navy);}
   .deptsearch:focus{outline:2px solid var(--gold);outline-offset:1px;}
-  .deptempty{grid-column:1 / -1;text-align:center;color:var(--sub);font-size:15px;padding:18px 0;}
+  .deptempty{text-align:center;color:var(--sub);font-size:15px;padding:18px 0;}
   .deptrow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 2px;border-bottom:1px solid var(--line);font-size:15px;color:var(--navy);}
   .deptrow .dn{flex:1;min-width:0;word-break:break-all;font-weight:700;}
   .deptrow .da{display:flex;gap:6px;flex-shrink:0;}
@@ -473,8 +475,8 @@
         <div class="label">부서</div>
         <div class="digits" id="empDigitsDisplay">선택하세요</div>
       </div>
-      <input type="search" id="deptSearchInput" class="deptsearch" placeholder="🔍 부서 검색 (예: 생산, ㅅㅅ)" autocomplete="off" style="display:none;" />
-      <div class="deptgrid" id="deptGrid" style="display:none;"></div>
+      <input type="search" id="deptSearchInput" class="deptsearch" placeholder="🔍 부서명 또는 초성 입력 (예: 생산, ㅅㅅ)" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" style="display:none;" />
+      <div class="deptlist" id="deptList" style="display:none;"></div>
       <div class="keypad" id="keypad"></div>
       <div class="actionrow">
         <button class="actbtn returnbtn" id="inputBackBtn">취소</button>
@@ -520,6 +522,16 @@
       <div style="margin-top:16px;padding:16px 18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;font-size:13px;color:var(--navy);line-height:1.9;">
         <div>○ 조회 기간 중 적립마일리지 : <strong id="userMileageEarned">0</strong>점</div>
         <div>○ 대여 중 : <strong id="userRentingList">없음</strong></div>
+      </div>
+
+      <h3 class="sect">
+        <span>○ 대여 내역</span>
+      </h3>
+      <div class="invtable-wrap no-hscroll full">
+        <table class="invtable compact">
+          <thead><tr><th>구분</th><th>일자</th><th>시간</th><th>장바구니 번호</th><th>마일리지</th></tr></thead>
+          <tbody id="userInvBody"></tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -823,6 +835,7 @@
   const userMileageSection = document.getElementById('userMileageSection');
   const userMileageEarned = document.getElementById('userMileageEarned');
   const userRentingList = document.getElementById('userRentingList');
+  const userInvBody = document.getElementById('userInvBody');
   let userLookupEmpId = null;
   let userDateStart = null;
   let userDateEnd = null;
@@ -866,7 +879,7 @@
   const empLookupResults = document.getElementById('empLookupResults');
   const empLookupCancelBtn = document.getElementById('empLookupCancelBtn');
   const keypad = document.getElementById('keypad');
-  const deptGrid = document.getElementById('deptGrid');
+  const deptList = document.getElementById('deptList');
   const deptSearchInput = document.getElementById('deptSearchInput');
   const deptAdminList = document.getElementById('deptAdminList');
   const deptAdminCount = document.getElementById('deptAdminCount');
@@ -1145,8 +1158,7 @@
   }
 
   function renderFields(){
-    empDigitsDisplay.textContent = deptValue || '선택하세요';
-    Array.from(deptGrid.children).forEach(b => b.classList.toggle('active', b.textContent === deptValue));
+    empDigitsDisplay.textContent = deptValue || '아래에 입력해 선택하세요';
     basketDigitsDisplay.innerHTML = basketDigits.length
       ? basketDigits + '<span class="cursor">|</span>'
       : '입력하세요<span class="cursor">|</span>';
@@ -1158,8 +1170,18 @@
     // 부서 선택 단계에서는 숫자 키패드 대신 부서 버튼을 보여줍니다.
     const deptMode = activeField === 'emp';
     keypad.style.display = deptMode ? 'none' : '';
-    deptGrid.style.display = deptMode ? '' : 'none';
     deptSearchInput.style.display = deptMode ? '' : 'none';
+    if(deptMode && !wasDeptMode){
+      // 부서 입력 단계 진입: 검색창에 커서를 두고 전체 목록을 먼저 보여줌
+      deptListOpen = !deptValue;
+      deptActiveIdx = -1;
+      renderDeptButtons();
+      setTimeout(() => { try{ deptSearchInput.focus(); }catch(e){} }, 50);
+    } else if(!deptMode){
+      deptListOpen = false;
+      renderDeptButtons();
+    }
+    wasDeptMode = deptMode;
   }
 
   empBox.addEventListener('click', () => { activeField = 'emp'; updateFieldFocus(); });
@@ -1203,26 +1225,113 @@
   function escHtml(v){
     return String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
+  // ---- 부서 입력: 초성/키워드 검색 + 자동완성 드롭다운 ----
+  let deptListOpen = false;
+  let deptActiveIdx = -1;
+  let deptShown = [];
+  let wasDeptMode = false;
+
+  // 일치도 순 정렬: 완전일치 > 앞부분 일치(글자/초성) > 포함 > 초성 포함
+  function rankDepts(q){
+    const query = q.trim().toLowerCase();
+    if(!query) return DEPARTMENTS.slice();
+    const isCho = /^[ㄱ-ㅎ]+$/.test(query);
+    const scored = [];
+    DEPARTMENTS.forEach(d => {
+      if(!deptMatches(d, q)) return;
+      const n = d.toLowerCase();
+      let score = 3;
+      if(n === query) score = 0;
+      else if(n.startsWith(query) || (isCho && toChoseong(d).startsWith(query))) score = 1;
+      else if(n.includes(query)) score = 2;
+      scored.push([score, d]);
+    });
+    scored.sort((x, y) => x[0] - y[0]);
+    return scored.map(x => x[1]);
+  }
+  function highlightDept(name, q){
+    const query = q.trim().toLowerCase();
+    const i = query ? name.toLowerCase().indexOf(query) : -1;
+    if(i < 0) return escHtml(name);
+    return escHtml(name.slice(0, i)) + '<b>' + escHtml(name.slice(i, i + query.length)) + '</b>' + escHtml(name.slice(i + query.length));
+  }
   function renderDeptButtons(){
-    deptGrid.innerHTML = '';
-    const list = DEPARTMENTS.filter(d => deptMatches(d, deptSearchInput.value));
-    if(list.length === 0){
-      const e = document.createElement('div');
-      e.className = 'deptempty';
-      e.textContent = '검색 결과가 없습니다';
-      deptGrid.appendChild(e);
+    deptList.innerHTML = '';
+    if(!deptListOpen){
+      deptList.style.display = 'none';
       return;
     }
-    list.forEach(d => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'deptbtn' + (d === deptValue ? ' active' : '');
-      b.textContent = d;
-      b.addEventListener('click', () => { deptValue = d; renderFields(); });
-      deptGrid.appendChild(b);
+    deptList.style.display = '';
+    const q = deptSearchInput.value;
+    deptShown = rankDepts(q);
+    if(deptShown.length === 0){
+      deptActiveIdx = -1;
+      const e = document.createElement('div');
+      e.className = 'deptempty';
+      e.textContent = '일치하는 부서가 없습니다';
+      deptList.appendChild(e);
+      return;
+    }
+    if(deptActiveIdx >= deptShown.length) deptActiveIdx = deptShown.length - 1;
+    deptShown.forEach((d, i) => {
+      const it = document.createElement('div');
+      it.className = 'deptitem' + (i === deptActiveIdx ? ' active' : '');
+      it.innerHTML = highlightDept(d, q);
+      it.addEventListener('click', () => pickDept(d));
+      deptList.appendChild(it);
+      if(i === deptActiveIdx && it.scrollIntoView){ try{ it.scrollIntoView({ block:'nearest' }); }catch(e){} }
     });
   }
-  deptSearchInput.addEventListener('input', renderDeptButtons);
+  function pickDept(d){
+    deptValue = d;
+    deptSearchInput.value = d;
+    deptListOpen = false;
+    deptActiveIdx = -1;
+    renderFields();
+    renderDeptButtons();
+  }
+  deptSearchInput.addEventListener('input', () => {
+    const v = deptSearchInput.value.trim().toLowerCase();
+    const exact = DEPARTMENTS.find(d => d.toLowerCase() === v);
+    deptValue = exact || '';          // 글자를 고치면 선택이 풀리고, 정확히 일치하면 바로 선택됨
+    deptListOpen = true;
+    deptActiveIdx = v ? 0 : -1;       // 입력 중에는 가장 일치하는 부서가 미리 선택(자동완성)
+    renderFields();
+    renderDeptButtons();
+  });
+  deptSearchInput.addEventListener('focus', () => {
+    if(!deptListOpen){ deptListOpen = true; deptActiveIdx = -1; renderDeptButtons(); }
+  });
+  deptSearchInput.addEventListener('keydown', (e) => {
+    if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+      e.preventDefault();
+      if(!deptListOpen){ deptListOpen = true; renderDeptButtons(); }
+      if(deptShown.length){
+        deptActiveIdx = e.key === 'ArrowDown'
+          ? Math.min(deptShown.length - 1, deptActiveIdx + 1)
+          : Math.max(0, deptActiveIdx - 1);
+        renderDeptButtons();
+      }
+    } else if(e.key === 'Enter'){
+      e.preventDefault();
+      if(deptListOpen && deptShown.length && deptActiveIdx >= 0){
+        pickDept(deptShown[deptActiveIdx]);
+      } else if(deptListOpen && deptShown.length === 1){
+        pickDept(deptShown[0]);
+      } else if(deptValue){
+        inputNextBtn.click();          // 선택된 상태에서 한 번 더 Enter = 다음
+      }
+    } else if(e.key === 'Escape'){
+      deptListOpen = false;
+      renderDeptButtons();
+    }
+  });
+  document.addEventListener('click', (e) => {
+    if(!deptListOpen) return;
+    const t = e.target;
+    const inside = t && ((t.closest && t.closest('#deptList')) || t.id === 'deptSearchInput');
+    if(!inside){ deptListOpen = false; renderDeptButtons(); }
+  });
 
   function applyDepartments(list){
     DEPARTMENTS = list;
@@ -1616,6 +1725,33 @@
       userRentingList.textContent = rentingBaskets.length === 0
         ? '없음'
         : rentingBaskets.map(b => padBasket(b.id) + '번').join(', ');
+
+      // 대여 내역 (대여/반납/훼손·분실 통합 리스트, 선택한 부서 + 조회 기간 결과만)
+      const userVisibleLog = state.log.filter(l =>
+        (l.type !== 'adjust' || isDisposeAction(l.action)) && l.type !== 'mileageRedeem' &&
+        l.dept === userLookupEmpId && withinDateRange(l)
+      );
+      if(userVisibleLog.length === 0){
+        userInvBody.innerHTML = `<tr><td colspan="5" class="invempty">해당 부서의 대여 내역이 없습니다</td></tr>`;
+      } else {
+        userInvBody.innerHTML = userVisibleLog.map(l => {
+          const isDispose = l.type === 'adjust';
+          const cls = isDispose ? 'dispose' : (l.action === '대여' ? 'out' : 'in');
+          const label = isDispose ? '훼손/분실' : l.action;
+          const dateStr = l.at ? l.at.slice(0,10) : '-';
+          const timeStr = l.at ? new Date(l.at).toLocaleTimeString('ko-KR', { hour12:false, hour:'2-digit', minute:'2-digit' }) : (l.time || '-').slice(0,5);
+          const basketCell = l.basketId ? padBasket(l.basketId) + '번' : (l.basketRange || '-');
+          const pts = l.points != null ? l.points : null;
+          const ptsCell = pts == null ? '-' : (pts > 0 ? `+${pts}점` : `${pts}점`);
+          return `<tr>
+            <td><span class="iotag ${cls}">${label}</span></td>
+            <td>${dateStr}</td>
+            <td>${timeStr}</td>
+            <td>${basketCell}</td>
+            <td>${ptsCell}</td>
+          </tr>`;
+        }).join('');
+      }
     }
 
     lastState = state;
@@ -1899,6 +2035,7 @@
       return `<div class="qr-lookup-row" data-basket="${b.id}">
         <div class="qlr-top">
           <span class="qlr-basket">장바구니 ${padBasket(b.id)}번</span>
+          <span class="qlr-time">대여 ${fmtRentedAt(b.rentedAt)}</span>
         </div>
       </div>`;
     }).join('');
