@@ -677,6 +677,8 @@
       <div style="width:100%;display:flex;flex-direction:column;gap:10px;">
         <button class="danger-btn" id="resetBasketsBtn">재고(대여) 상태 초기화</button>
         <div style="font-size:12px;color:var(--sub);margin-top:-6px;">모든 장바구니를 "대여 가능" 상태로 되돌립니다. 대여/반납 이력과 실적은 유지됩니다.</div>
+        <button class="danger-btn" id="clearStockBtn">재고 전체 삭제 (보유수량 0으로)</button>
+        <div style="font-size:12px;color:var(--sub);margin-top:-6px;">등록된 장바구니를 모두 삭제하고 입고·폐기/분실 기록도 비웁니다. 이후 재고관리의 "입고 처리"로 번호를 새로 등록하세요. 대여/반납 이력과 실적은 유지됩니다.</div>
         <button class="danger-btn" id="resetLogBtn">대여/반납 이력 초기화</button>
         <div style="font-size:12px;color:var(--sub);margin-top:-6px;">이력 화면의 기록을 모두 삭제합니다. 재고 상태와 실적 집계는 유지됩니다.</div>
         <button class="danger-btn" id="resetStatsBtn">이용실적(마일리지) 초기화</button>
@@ -947,6 +949,7 @@
   const pwChangeBtn = document.getElementById('pwChangeBtn');
   const pwChangeMsg = document.getElementById('pwChangeMsg');
   const resetBasketsBtn = document.getElementById('resetBasketsBtn');
+  const clearStockBtn = document.getElementById('clearStockBtn');
   const resetLogBtn = document.getElementById('resetLogBtn');
   const resetStatsBtn = document.getElementById('resetStatsBtn');
 
@@ -1939,6 +1942,32 @@
   });
 
   // ---- 데이터 초기화 ----
+  clearStockBtn.addEventListener('click', () => {
+    showYesNo(
+      '재고 전체 삭제',
+      '등록된 장바구니를 모두 삭제하고 입고·폐기/분실 기록도 비웁니다. 총 보유수량이 0개가 되며 되돌릴 수 없습니다. 계속하시겠습니까?',
+      '예, 계속합니다', '아니오',
+      () => {
+        showYesNo(
+          '최종 확인',
+          '정말로 재고를 전부 삭제하시겠습니까? (삭제 전 데이터는 백업 파일로 내려받아집니다)',
+          '예, 삭제합니다', '아니오',
+          async () => {
+            const state = await loadState();
+            downloadJsonBackup(state, '재고전체삭제전');
+            state.baskets = [];
+            state.log = state.log.filter(l => l.type !== 'adjust');
+            if(!(await saveState(state))) return;
+            render(state);
+            showAlert('삭제 완료', '재고가 모두 삭제되었습니다. 재고관리 화면의 "입고 처리"로 장바구니 번호를 새로 등록해 주세요. (삭제 전 데이터가 백업 파일로 다운로드되었습니다)');
+          },
+          () => {}
+        );
+      },
+      () => {}
+    );
+  });
+
   resetBasketsBtn.addEventListener('click', () => {
     showYesNo(
       '재고 상태 초기화',
