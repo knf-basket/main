@@ -285,6 +285,17 @@
     font-family:inherit;cursor:pointer;transition:background .12s ease, transform .1s ease;
   }
   .lookup-btn:active{background:#EEF1F6;transform:scale(.98);}
+  .cp-ta{width:100%;min-height:130px;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;background:#fff;color:var(--navy);resize:vertical;box-sizing:border-box;}
+  .cp-note{font-size:12.5px;color:var(--sub);line-height:1.6;margin-bottom:6px;}
+  .cp-item{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#fff;}
+  .cp-item.done{background:#F4F6F8;opacity:.8;}
+  .cp-head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--sub);margin-bottom:6px;}
+  .cp-cat{display:inline-block;background:#EEF1F6;color:var(--navy);border-radius:10px;padding:2px 9px;font-weight:700;font-size:12px;margin-right:6px;}
+  .cp-text{font-size:15px;line-height:1.55;white-space:pre-wrap;word-break:break-word;color:var(--navy);}
+  .cp-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;}
+  .cp-acts button{border:1px solid var(--line);background:#fff;border-radius:16px;padding:6px 14px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;color:var(--navy);}
+  .cp-acts button.del{color:#B3261E;border-color:#E5B8B4;}
+  .tab .badge{display:inline-block;min-width:16px;padding:0 5px;margin-left:4px;border-radius:9px;background:#B3261E;color:#fff;font-size:11px;line-height:16px;}
   .qr-lookup-row{
     display:flex;flex-direction:column;gap:4px;
     padding:10px 12px;border:1px solid var(--line);border-radius:10px;
@@ -491,6 +502,39 @@
     </div>
   </div>
 
+  <!-- 불편사항 접수 (사용자) -->
+  <div class="screen" id="screen-complaint">
+    <h3 class="sect">불편사항 접수</h3>
+    <div class="cp-note">이용 중 불편한 점을 남겨 주세요. 접수된 내용은 관리자만 확인합니다.<br>개인정보·연락처는 적지 마세요.</div>
+    <div class="modal-field">
+      <label>부서/업체</label>
+      <input type="text" id="cpDept" class="deptselect" list="deptDatalist" placeholder="부서/업체 검색 또는 선택" autocomplete="off" />
+    </div>
+    <div class="modal-field">
+      <label>분류</label>
+      <select id="cpCat" class="deptselect"></select>
+    </div>
+    <div class="modal-field">
+      <label>내용 <span id="cpCount" style="font-weight:400;">(0/300)</span></label>
+      <textarea id="cpText" class="cp-ta" maxlength="300" placeholder="불편했던 내용을 구체적으로 적어 주세요. (예: 12번 장바구니 손잡이 파손)"></textarea>
+    </div>
+    <button class="modal-confirm" id="cpSubmit" style="width:100%;margin-top:12px;">접수하기</button>
+    <div id="cpMsg" style="margin-top:10px;font-size:13.5px;min-height:20px;"></div>
+  </div>
+
+  <!-- 불편사항 (관리자) -->
+  <div class="screen" id="screen-inbox">
+    <h3 class="sect" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span>불편사항 접수 목록</span>
+      <select id="inboxFilter" class="deptselect" style="width:auto;padding:7px 10px;font-size:13px;">
+        <option value="open">미처리</option>
+        <option value="done">처리완료</option>
+        <option value="all">전체</option>
+      </select>
+    </h3>
+    <div id="inboxList"></div>
+  </div>
+
   <!-- 대여현황 (사용자 모드에서도 확인 가능) -->
   <div class="screen" id="screen-userstatus">
     <h3 class="sect">부서/업체 대여현황 조회</h3>
@@ -690,10 +734,12 @@
   <div class="tabbar" id="tabbar">
     <div class="tab active user-tab" data-screen="home"><span class="icon" aria-hidden="true">🛒</span>대여/반납</div>
     <div class="tab user-tab" data-screen="userstatus"><span class="icon" aria-hidden="true">📋</span>대여현황</div>
+    <div class="tab user-tab" data-screen="complaint"><span class="icon" aria-hidden="true">📝</span>불편접수</div>
     <div class="tab admin-tab" data-screen="status" style="display:none;"><span class="icon" aria-hidden="true">📦</span>재고관리</div>
     <div class="tab admin-tab" data-screen="lookup" style="display:none;"><span class="icon" aria-hidden="true">🔍</span>이력조회</div>
     <div class="tab admin-tab" data-screen="rank" style="display:none;"><span class="icon" aria-hidden="true">🏆</span>이용실적</div>
     <div class="tab admin-tab" data-screen="staff" style="display:none;"><span class="icon" aria-hidden="true">⚙️</span>설정</div>
+    <div class="tab admin-tab" data-screen="inbox" style="display:none;"><span class="icon" aria-hidden="true">📨</span>불편사항<span class="badge" id="inboxBadge" style="display:none;"></span></div>
   </div>
 </div>
 
@@ -2423,6 +2469,100 @@
   });
 
 
+
+  // ---- 불편사항 접수 (사용자는 접수만, 목록은 관리자 모드에서만 불러옴) ----
+  const CP_CATS = ['장바구니 파손·분실','시스템 오류(화면·입력)','재고 부족·위치','마일리지','기타'];
+  const CP_COOLDOWN_MS = 60000;
+  const FB_COMPLAINTS = fbDb.collection('complaints');
+  const cpDept = document.getElementById('cpDept');
+  const cpCat = document.getElementById('cpCat');
+  const cpText = document.getElementById('cpText');
+  const cpCount = document.getElementById('cpCount');
+  const cpSubmit = document.getElementById('cpSubmit');
+  const cpMsg = document.getElementById('cpMsg');
+  CP_CATS.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; cpCat.appendChild(o); });
+  let cpLastSent = 0;
+  function cpSetMsg(t, ok){ cpMsg.textContent = t; cpMsg.style.color = ok ? '#1B7F3B' : '#B3261E'; }
+  cpText.addEventListener('input', () => { cpCount.textContent = `(${cpText.value.length}/300)`; });
+  cpSubmit.addEventListener('click', async () => {
+    const dept = cpDept.value.trim();
+    const text = cpText.value.trim();
+    if(!isValidDept(dept)){ cpSetMsg('목록에 있는 부서/업체를 선택해 주세요.', false); return; }
+    if(text.length < 5){ cpSetMsg('내용을 5자 이상 적어 주세요.', false); return; }
+    const wait = CP_COOLDOWN_MS - (Date.now() - cpLastSent);
+    if(wait > 0){ cpSetMsg(`잠시 후 다시 접수해 주세요. (${Math.ceil(wait/1000)}초)`, false); return; }
+    cpSubmit.disabled = true;
+    try{
+      await FB_COMPLAINTS.add({ dept, cat: cpCat.value, text, status: 'new', createdAt: Date.now() });
+      cpLastSent = Date.now();
+      cpText.value = ''; cpCount.textContent = '(0/300)';
+      cpSetMsg('접수되었습니다. 소중한 의견 감사합니다.', true);
+    }catch(e){
+      console.error('불편사항 접수 실패', e);
+      cpSetMsg('접수하지 못했습니다. 네트워크 연결을 확인하거나 잠시 후 다시 시도해 주세요.', false);
+    }finally{
+      cpSubmit.disabled = false;
+    }
+  });
+
+  // 관리자: 접수 목록
+  const inboxList = document.getElementById('inboxList');
+  const inboxFilter = document.getElementById('inboxFilter');
+  const inboxBadge = document.getElementById('inboxBadge');
+  let inboxUnsub = null;
+  let inboxItems = [];
+  function renderInbox(){
+    const f = inboxFilter.value;
+    const rows = inboxItems.filter(x => f === 'all' ? true : (f === 'done' ? x.status === 'done' : x.status !== 'done'));
+    if(!rows.length){
+      inboxList.innerHTML = '<div class="invempty" style="padding:24px;text-align:center;color:var(--sub);">접수된 불편사항이 없습니다</div>';
+      return;
+    }
+    inboxList.innerHTML = rows.map(x => {
+      const d = new Date(x.createdAt || 0);
+      const done = x.status === 'done';
+      return `<div class="cp-item${done ? ' done' : ''}">
+        <div class="cp-head"><span><span class="cp-cat">${escHtml(x.cat || '기타')}</span>${escHtml(x.dept || '')}</span><span>${d.toLocaleDateString('ko-KR')} ${fmtTime(d)}${done ? ' · 처리완료' : ''}</span></div>
+        <div class="cp-text">${escHtml(x.text || '')}</div>
+        <div class="cp-acts"><button data-id="${escHtml(x.id)}" data-act="${done ? 'reopen' : 'done'}">${done ? '미처리로 되돌리기' : '처리완료'}</button><button class="del" data-id="${escHtml(x.id)}" data-act="del">삭제</button></div>
+      </div>`;
+    }).join('');
+  }
+  inboxFilter.addEventListener('change', renderInbox);
+  inboxList.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-act]');
+    if(!b) return;
+    const id = b.dataset.id, act = b.dataset.act;
+    if(act === 'del'){
+      showYesNo('불편사항 삭제', '이 접수 건을 삭제합니다. 되돌릴 수 없습니다. 계속하시겠습니까?', '삭제', '취소', async () => {
+        try{ await FB_COMPLAINTS.doc(id).delete(); }catch(err){ console.error(err); showAlert('삭제 실패', '삭제하지 못했습니다. 네트워크와 Firestore 규칙(complaints)을 확인해 주세요.'); }
+      }, () => {});
+      return;
+    }
+    FB_COMPLAINTS.doc(id).update({ status: act === 'done' ? 'done' : 'new' }).catch(err => {
+      console.error(err);
+      showAlert('변경 실패', '상태를 바꾸지 못했습니다. 네트워크와 Firestore 규칙(complaints)을 확인해 주세요.');
+    });
+  });
+  function startInbox(){
+    if(inboxUnsub) return;
+    inboxUnsub = FB_COMPLAINTS.orderBy('createdAt', 'desc').limit(300).onSnapshot((snap) => {
+      inboxItems = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+      const n = inboxItems.filter(x => x.status !== 'done').length;
+      inboxBadge.textContent = n;
+      inboxBadge.style.display = n ? '' : 'none';
+      renderInbox();
+    }, (err) => {
+      console.error('불편사항 목록 읽기 실패', err);
+      inboxList.innerHTML = '<div class="invempty" style="padding:24px;text-align:center;color:var(--sub);">목록을 불러오지 못했습니다. Firestore 규칙(complaints)을 확인해 주세요.</div>';
+    });
+  }
+  function stopInbox(){
+    if(inboxUnsub){ inboxUnsub(); inboxUnsub = null; }
+    inboxItems = [];
+    inboxBadge.style.display = 'none';
+  }
+
   // ---- 현황·이력 CSV 다운로드 ----
   function csvEscape(val){
     const str = String(val == null ? '' : val);
@@ -2745,6 +2885,7 @@
     document.querySelectorAll('.admin-tab').forEach(t => t.style.display = '');
     updateTabbarLayout();
     adminBtn.textContent = '👤 사용자';
+    startInbox();
     adminBtn.classList.add('on');
     // 관리자 모드 진입 시 재고관리 화면으로 이동
     tabs.forEach(x => x.classList.remove('active'));
@@ -2761,6 +2902,7 @@
     document.querySelectorAll('.user-tab').forEach(t => t.style.display = '');
     updateTabbarLayout();
     adminBtn.textContent = '🔒 관리자';
+    stopInbox();
     adminBtn.classList.remove('on');
     // 관리자 전용 화면을 보고 있었다면 홈으로 이동
     tabs.forEach(x => x.classList.remove('active'));
