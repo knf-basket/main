@@ -470,8 +470,8 @@
         <div class="digits" id="basketDigitsDisplay">입력하세요<span class="cursor">|</span></div>
       </div>
       <div id="basketConfirmedText" style="display:none;font-size:16px;color:var(--sub);font-weight:700;margin-bottom:8px;">장바구니 번호 : <span id="basketConfirmedNum" style="color:var(--navy);"></span></div>
-      <button type="button" class="lookup-btn" id="empLookupOpenBtn" style="display:none;">🔍 대여 부서로 조회</button>
-      <input type="search" id="deptSearchInput" class="deptsearch" placeholder="🔍 부서명 또는 초성 입력 (예: 생산, ㅅㅅ)" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" style="display:none;" />
+      <button type="button" class="lookup-btn" id="empLookupOpenBtn" style="display:none;">🔍 대여 부서/업체로 조회</button>
+      <input type="search" id="deptSearchInput" class="deptsearch" placeholder="🔍 부서/업체명 또는 초성 입력 (예: 생산, ㅅㅅ)" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" style="display:none;" />
       <div class="deptlist" id="deptList" style="display:none;"></div>
       <div class="keypad" id="keypad"></div>
       <div class="actionrow">
@@ -493,11 +493,11 @@
 
   <!-- 대여현황 (사용자 모드에서도 확인 가능) -->
   <div class="screen" id="screen-userstatus">
-    <h3 class="sect">부서 대여현황 조회</h3>
+    <h3 class="sect">부서/업체 대여현황 조회</h3>
     <div class="modal-field" style="margin-top:0;">
-      <label>부서</label>
+      <label>부서/업체</label>
       <div style="display:flex;gap:8px;">
-        <input type="text" id="userLookupEmpInput" class="deptselect" list="deptDatalist" placeholder="부서 검색 또는 선택" autocomplete="off" style="flex:1;" />
+        <input type="text" id="userLookupEmpInput" class="deptselect" list="deptDatalist" placeholder="부서/업체 검색 또는 선택" autocomplete="off" style="flex:1;" />
       </div>
     </div>
     <div class="modal-field">
@@ -551,7 +551,7 @@
     </h3>
     <div class="invtable-wrap full">
       <table class="invtable">
-        <thead><tr><th>장바구니번호</th><th>부서</th><th>대여일시</th><th>경과시간</th></tr></thead>
+        <thead><tr><th>장바구니번호</th><th>부서/업체</th><th>대여일시</th><th>경과시간</th></tr></thead>
         <tbody id="overdueBody"></tbody>
       </table>
     </div>
@@ -561,7 +561,7 @@
     </h3>
     <div class="invtable-wrap full">
       <table class="invtable">
-        <thead><tr><th>일자</th><th>시간</th><th>구분</th><th>부서</th><th>장바구니번호</th><th>사유</th><th>수량</th><th>잔여재고</th></tr></thead>
+        <thead><tr><th>일자</th><th>시간</th><th>구분</th><th>부서/업체</th><th>장바구니번호</th><th>사유</th><th>수량</th><th>잔여재고</th></tr></thead>
         <tbody id="invBody"></tbody>
       </table>
     </div>
@@ -590,7 +590,7 @@
       </h3>
       <div class="invtable-wrap full">
         <table class="invtable">
-          <thead><tr><th>구분</th><th>일자</th><th>시간</th><th>부서</th><th>사유</th><th>수량</th><th>잔여재고</th></tr></thead>
+          <thead><tr><th>구분</th><th>일자</th><th>시간</th><th>부서/업체</th><th>사유</th><th>수량</th><th>잔여재고</th></tr></thead>
           <tbody id="lookupBasketBody"></tbody>
         </table>
       </div>
@@ -623,7 +623,7 @@
       <div class="modal-msg" id="customDateMsg" style="margin-top:6px;margin-bottom:0;"></div>
     </div>
     <table class="board-table">
-      <thead><tr><th></th><th>부서</th><th>대여횟수</th><th>반납횟수</th><th>적립마일리지</th></tr></thead>
+      <thead><tr><th></th><th>부서/업체</th><th>대여횟수</th><th>반납횟수</th><th>적립마일리지</th></tr></thead>
       <tbody id="rankBody"></tbody>
     </table>
     <div style="flex:1;"></div>
@@ -643,14 +643,14 @@
     </div>
 
     <h3 class="sect" style="margin-top:22px;display:flex;justify-content:space-between;align-items:center;">
-      <span>부서 관리</span>
+      <span>부서/업체 관리</span>
       <span id="deptAdminCount" style="font-weight:700;color:var(--sub);"></span>
     </h3>
-    <div style="font-size:12px;color:var(--sub);margin-bottom:10px;line-height:1.5;">대여/반납/신고 화면에 표시되는 부서 목록입니다. 추가·수정·삭제하면 모든 기기에 바로 반영됩니다. 부서명을 수정하면 기존 이력과 이용실적도 새 이름으로 함께 바뀝니다.</div>
+    <div style="font-size:12px;color:var(--sub);margin-bottom:10px;line-height:1.5;">대여/반납/신고 화면에 표시되는 부서/업체 목록입니다. 추가·수정·삭제하면 모든 기기에 바로 반영됩니다. 부서/업체명을 수정하면 기존 이력과 이용실적도 새 이름으로 함께 바뀝니다.</div>
     <div class="fieldbox static" style="cursor:default;">
       <div style="width:100%;display:flex;flex-direction:column;gap:10px;">
         <div style="display:flex;gap:8px;">
-          <input type="text" id="deptAddInput" class="deptselect" placeholder="새 부서명 (20자 이내)" maxlength="20" autocomplete="off" style="flex:1;" />
+          <input type="text" id="deptAddInput" class="deptselect" placeholder="새 부서/업체명 (20자 이내)" maxlength="20" autocomplete="off" style="flex:1;" />
           <button class="modal-confirm" id="deptAddBtn" style="width:auto;padding:0 18px;">추가</button>
         </div>
         <div class="modal-msg" id="deptAdminMsg" style="margin:0;"></div>
@@ -660,13 +660,13 @@
           <div style="font-size:12.5px;color:var(--sub);font-weight:700;margin-bottom:6px;">엑셀/CSV 파일로 한 번에 등록</div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <select id="deptUploadMode" class="deptselect" style="flex:1;min-width:140px;width:auto;">
-              <option value="add">추가 (이미 있는 부서 제외)</option>
+              <option value="add">추가 (이미 있는 부서/업체 제외)</option>
               <option value="replace">전체 교체</option>
             </select>
             <button class="modal-confirm" id="deptUploadBtn" style="width:auto;padding:0 18px;">📄 파일 업로드</button>
           </div>
           <input type="file" id="deptFileInput" accept=".xlsx,.xls,.csv,.txt" style="display:none;" />
-          <div style="font-size:12px;color:var(--sub);margin-top:6px;line-height:1.5;">엑셀(.xlsx, .xls)·CSV·텍스트 파일의 첫 번째 열에 부서명을 한 줄씩 적어 올려 주세요. 첫 줄이 "부서" 또는 "부서명"이면 머리글로 보고 제외합니다.</div>
+          <div style="font-size:12px;color:var(--sub);margin-top:6px;line-height:1.5;">엑셀(.xlsx, .xls)·CSV·텍스트 파일의 첫 번째 열에 부서/업체명을 한 줄씩 적어 올려 주세요. 첫 줄이 "부서/업체" 또는 "부서/업체명"이면 머리글로 보고 제외합니다.</div>
         </div>
       </div>
     </div>
@@ -682,7 +682,7 @@
         <button class="danger-btn" id="resetLogBtn">대여/반납 이력 초기화</button>
         <div style="font-size:12px;color:var(--sub);margin-top:-6px;">이력 화면의 기록을 모두 삭제합니다. 재고 상태와 실적 집계는 유지됩니다.</div>
         <button class="danger-btn" id="resetStatsBtn">이용실적(마일리지) 초기화</button>
-        <div style="font-size:12px;color:var(--sub);margin-top:-6px;">부서별 누적 실적/마일리지를 모두 삭제합니다. 재고 상태와 이력은 유지됩니다.</div>
+        <div style="font-size:12px;color:var(--sub);margin-top:-6px;">부서/업체별 누적 실적/마일리지를 모두 삭제합니다. 재고 상태와 이력은 유지됩니다.</div>
       </div>
     </div>
   </div>
@@ -775,10 +775,10 @@
 
 <div class="modal-overlay" id="empLookupModal">
   <div class="modal-card wide" style="text-align:center;">
-    <div class="modal-title">대여 부서로 장바구니 조회</div>
+    <div class="modal-title">대여 부서/업체로 장바구니 조회</div>
     <div class="modal-field">
-      <label>대여 부서</label>
-      <input type="text" id="empLookupInput" class="deptselect" list="deptDatalist" placeholder="부서 검색 또는 선택" autocomplete="off" />
+      <label>대여 부서/업체</label>
+      <input type="text" id="empLookupInput" class="deptselect" list="deptDatalist" placeholder="부서/업체 검색 또는 선택" autocomplete="off" />
       <button class="modal-confirm" id="empLookupSearchBtn" style="width:100%;margin-top:8px;">조회</button>
       <div id="empLookupResults" style="margin-top:10px;text-align:left;"></div>
     </div>
@@ -793,8 +793,8 @@
     <div class="modal-title" id="basketEditTitle">장바구니 상태 변경</div>
     <div class="modal-msg-body" id="basketEditBody">-</div>
     <div class="modal-field" id="basketEditEmpField" style="display:none;">
-      <label>대여 부서</label>
-      <input type="text" id="basketEditEmpInput" class="deptselect" list="deptDatalist" placeholder="부서 검색 또는 선택" autocomplete="off" />
+      <label>대여 부서/업체</label>
+      <input type="text" id="basketEditEmpInput" class="deptselect" list="deptDatalist" placeholder="부서/업체 검색 또는 선택" autocomplete="off" />
     </div>
     <div class="modal-msg" id="basketEditMsg"></div>
     <div class="modal-actions">
@@ -964,7 +964,7 @@
 
   let adminMode = false;
 
-  // 부서 목록: 관리자 모드 > 설정 > 부서 관리에서 수정합니다. (Firestore 'departments' 문서에 저장)
+  // 부서/업체 목록: 관리자 모드 > 설정 > 부서/업체 관리에서 수정합니다. (Firestore 'departments' 문서에 저장)
   // 아래 값은 서버에 목록이 아직 없을 때만 쓰는 기본값입니다.
   const DEFAULT_DEPARTMENTS = ['ESG협력부','경영지원부','기술개발부','생산부','품질보증부','안전환경부','연료설계부','기타'];
   let DEPARTMENTS = DEFAULT_DEPARTMENTS.slice();
@@ -1121,7 +1121,7 @@
     fbLatest.users = snap.exists ? (snap.data().users || {}) : {};
     tryRenderFromLatest();
   }, (err) => console.error('실시간 동기화 오류(userStats)', err));
-  // 부서 목록 실시간 동기화 (관리자가 바꾸면 모든 기기에 반영)
+  // 부서/업체 목록 실시간 동기화 (관리자가 바꾸면 모든 기기에 반영)
   FB_DEPTS.onSnapshot((snap) => {
     const list = snap.exists ? snap.data().list : null;
     const clean = Array.isArray(list) ? list.filter(x => typeof x === 'string' && x.trim()) : [];
@@ -1135,10 +1135,10 @@
     return `${dateStr} ${timeStr}`;
   }
   function maskId(id){
-    return id; // 부서명
+    return id; // 부서/업체명
   }
   function empLabel(state, empId){
-    // 개인정보 보호를 위해 개인 식별 정보 없이 부서명만 표시합니다.
+    // 개인정보 보호를 위해 개인 식별 정보 없이 부서/업체명만 표시합니다.
     if(!empId) return '-';
     return maskId(empId);
   }
@@ -1162,12 +1162,12 @@
 
   function updateFieldFocus(){
     basketBox.classList.toggle('focused', activeField === 'basket');
-    // 부서 선택 단계에서는 숫자 키패드 대신 부서 버튼을 보여줍니다.
+    // 부서/업체 선택 단계에서는 숫자 키패드 대신 부서/업체 버튼을 보여줍니다.
     const deptMode = activeField === 'emp';
     keypad.style.display = deptMode ? 'none' : '';
     deptSearchInput.style.display = deptMode ? '' : 'none';
     if(deptMode && !wasDeptMode){
-      // 부서 입력 단계 진입: 검색창에 커서를 두고 전체 목록을 먼저 보여줌
+      // 부서/업체 입력 단계 진입: 검색창에 커서를 두고 전체 목록을 먼저 보여줌
       deptListOpen = !deptValue;
       deptActiveIdx = -1;
       renderDeptButtons();
@@ -1200,7 +1200,7 @@
     keypad.appendChild(el);
   });
 
-  // ---- 부서 선택: 검색 + 버튼 ----
+  // ---- 부서/업체 선택: 검색 + 버튼 ----
   const CHOSEONG = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
   function toChoseong(str){
     return Array.from(str).map(ch => {
@@ -1208,7 +1208,7 @@
       return (c >= 0xAC00 && c <= 0xD7A3) ? CHOSEONG[Math.floor((c - 0xAC00) / 588)] : ch;
     }).join('');
   }
-  // 검색어가 부서명에 포함되거나, 초성만 입력했을 때 초성이 일치하면 표시
+  // 검색어가 부서/업체명에 포함되거나, 초성만 입력했을 때 초성이 일치하면 표시
   function deptMatches(name, query){
     const q = query.trim().toLowerCase();
     if(!q) return true;
@@ -1219,7 +1219,7 @@
   function escHtml(v){
     return String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
-  // ---- 부서 입력: 초성/키워드 검색 + 자동완성 드롭다운 ----
+  // ---- 부서/업체 입력: 초성/키워드 검색 + 자동완성 드롭다운 ----
   let deptListOpen = false;
   let deptActiveIdx = -1;
   let deptShown = [];
@@ -1262,7 +1262,7 @@
       deptActiveIdx = -1;
       const e = document.createElement('div');
       e.className = 'deptempty';
-      e.textContent = '일치하는 부서가 없습니다';
+      e.textContent = '일치하는 부서/업체가 없습니다';
       deptList.appendChild(e);
       return;
     }
@@ -1289,7 +1289,7 @@
     const exact = DEPARTMENTS.find(d => d.toLowerCase() === v);
     deptValue = exact || '';          // 글자를 고치면 선택이 풀리고, 정확히 일치하면 바로 선택됨
     deptListOpen = true;
-    deptActiveIdx = v ? 0 : -1;       // 입력 중에는 가장 일치하는 부서가 미리 선택(자동완성)
+    deptActiveIdx = v ? 0 : -1;       // 입력 중에는 가장 일치하는 부서/업체가 미리 선택(자동완성)
     renderFields();
     renderDeptButtons();
   });
@@ -1335,7 +1335,7 @@
     renderDeptAdminList();
   }
 
-  // ---- 관리자: 부서 관리 (추가 / 수정 / 삭제 / 정렬) ----
+  // ---- 관리자: 부서/업체 관리 (추가 / 수정 / 삭제 / 정렬) ----
   let editingDept = null;
   const DEPT_NAME_MAX = 20;
   const DEPT_LIST_MAX = 200;
@@ -1352,15 +1352,15 @@
   }
 
   function deptNameProblem(name){
-    if(!name) return '부서명을 입력해 주세요.';
-    if(name.length > DEPT_NAME_MAX) return `부서명은 ${DEPT_NAME_MAX}자 이내로 입력해 주세요.`;
-    if(/[.\/<>"'&]/.test(name)) return '부서명에는 . / < > " \' & 문자를 쓸 수 없습니다.';
+    if(!name) return '부서/업체명을 입력해 주세요.';
+    if(name.length > DEPT_NAME_MAX) return `부서/업체명은 ${DEPT_NAME_MAX}자 이내로 입력해 주세요.`;
+    if(/[.\/<>"'&]/.test(name)) return '부서/업체명에는 . / < > " \' & 문자를 쓸 수 없습니다.';
     return '';
   }
   function checkDeptName(name, ignoreName){
     const p = deptNameProblem(name);
     if(p) return p;
-    if(DEPARTMENTS.some(d => d !== ignoreName && d.toLowerCase() === name.toLowerCase())) return '이미 있는 부서명입니다.';
+    if(DEPARTMENTS.some(d => d !== ignoreName && d.toLowerCase() === name.toLowerCase())) return '이미 있는 부서/업체명입니다.';
     return '';
   }
 
@@ -1369,8 +1369,8 @@
       await FB_DEPTS.set({ list });
       return true;
     }catch(e){
-      console.error('부서 목록 저장 실패', e);
-      showAlert('저장 실패', '부서 목록을 저장하지 못했습니다. 네트워크 연결과 Firestore 규칙(departments 문서 허용)을 확인해 주세요.');
+      console.error('부서/업체 목록 저장 실패', e);
+      showAlert('저장 실패', '부서/업체 목록을 저장하지 못했습니다. 네트워크 연결과 Firestore 규칙(departments 문서 허용)을 확인해 주세요.');
       return false;
     }
   }
@@ -1379,7 +1379,7 @@
     const name = deptAddInput.value.trim();
     const err = checkDeptName(name, null);
     if(err){ deptAdminMsg.textContent = err; return; }
-    if(DEPARTMENTS.length >= DEPT_LIST_MAX){ deptAdminMsg.textContent = `부서는 최대 ${DEPT_LIST_MAX}개까지 등록할 수 있습니다.`; return; }
+    if(DEPARTMENTS.length >= DEPT_LIST_MAX){ deptAdminMsg.textContent = `부서/업체는 최대 ${DEPT_LIST_MAX}개까지 등록할 수 있습니다.`; return; }
     deptAdminMsg.textContent = '';
     const list = DEPARTMENTS.concat(name);
     if(await saveDepartments(list)){
@@ -1425,7 +1425,7 @@
       throw new Error('지원하지 않는 파일 형식입니다. (.xlsx, .xls, .csv, .txt)');
     }
     const names = cells.map(c => String(c == null ? '' : c).trim()).filter(Boolean);
-    if(names.length && ['부서','부서명','부서 명','department'].includes(names[0].toLowerCase())) names.shift();
+    if(names.length && ['부서','부서명','부서 명','부서/업체','부서/업체명','업체','업체명','department'].includes(names[0].toLowerCase())) names.shift();
     return names;
   }
 
@@ -1441,7 +1441,7 @@
     try{
       names = await readDeptFile(file);
     }catch(e){
-      console.error('부서 파일 읽기 실패', e);
+      console.error('부서/업체 파일 읽기 실패', e);
       showAlert('업로드 실패', (e && e.message) ? e.message : '파일을 읽지 못했습니다.');
       return;
     }
@@ -1454,7 +1454,7 @@
       valid.push(n);
     });
     if(valid.length === 0){
-      showAlert('업로드 실패', '읽을 수 있는 부서명이 없습니다. 첫 번째 열에 부서명이 한 줄씩 적혀 있는지 확인해 주세요.');
+      showAlert('업로드 실패', '읽을 수 있는 부서/업체명이 없습니다. 첫 번째 열에 부서/업체명이 한 줄씩 적혀 있는지 확인해 주세요.');
       return;
     }
     let finalList, summary;
@@ -1464,35 +1464,35 @@
       const keep = new Set(finalList.map(d => d.toLowerCase()));
       const lost = state.baskets.filter(b => b.status === 'rented' && b.dept && !keep.has(String(b.dept).toLowerCase())).map(b => b.dept);
       if(lost.length){
-        showAlert('교체할 수 없음', `현재 대여 중인 장바구니가 있는 부서(${Array.from(new Set(lost)).join(', ')})가 새 목록에 없습니다. 해당 부서를 파일에 포함하거나, 반납된 뒤 다시 시도해 주세요.`);
+        showAlert('교체할 수 없음', `현재 대여 중인 장바구니가 있는 부서/업체(${Array.from(new Set(lost)).join(', ')})가 새 목록에 없습니다. 해당 부서/업체를 파일에 포함하거나, 반납된 뒤 다시 시도해 주세요.`);
         return;
       }
-      summary = `부서 목록을 업로드한 ${valid.length}개로 전체 교체합니다. (현재 ${DEPARTMENTS.length}개)`;
+      summary = `부서/업체 목록을 업로드한 ${valid.length}개로 전체 교체합니다. (현재 ${DEPARTMENTS.length}개)`;
     } else {
       const exist = new Set(DEPARTMENTS.map(d => d.toLowerCase()));
       const added = valid.filter(n => !exist.has(n.toLowerCase()));
       if(added.length === 0){
-        showAlert('추가할 부서 없음', '파일의 부서가 모두 이미 등록되어 있습니다.');
+        showAlert('추가할 부서/업체 없음', '파일의 부서/업체가 모두 이미 등록되어 있습니다.');
         return;
       }
       finalList = DEPARTMENTS.concat(added);
-      summary = `새 부서 ${added.length}개를 추가합니다. (이미 있는 ${valid.length - added.length}개는 제외)`;
+      summary = `새 부서/업체 ${added.length}개를 추가합니다. (이미 있는 ${valid.length - added.length}개는 제외)`;
     }
     if(finalList.length > DEPT_LIST_MAX){
-      showAlert('업로드 실패', `부서는 최대 ${DEPT_LIST_MAX}개까지 등록할 수 있습니다. (적용 시 ${finalList.length}개)`);
+      showAlert('업로드 실패', `부서/업체는 최대 ${DEPT_LIST_MAX}개까지 등록할 수 있습니다. (적용 시 ${finalList.length}개)`);
       return;
     }
     if(invalid.length){
       summary += ` 형식이 맞지 않아 제외되는 항목이 ${invalid.length}개 있습니다. (${invalid.slice(0,3).join(', ')}${invalid.length > 3 ? ' 등' : ''})`;
     }
     showYesNo(
-      '부서 목록 업로드',
+      '부서/업체 목록 업로드',
       summary + ' 계속하시겠습니까?',
       '예, 적용합니다', '아니오',
       async () => {
         if(await saveDepartments(finalList)){
           applyDepartments(finalList);
-          showAlert('업로드 완료', `부서 목록이 ${finalList.length}개로 저장되었습니다.`);
+          showAlert('업로드 완료', `부서/업체 목록이 ${finalList.length}개로 저장되었습니다.`);
         }
       },
       () => {}
@@ -1500,7 +1500,7 @@
   });
 
   async function renameDept(oldName, newName){
-    // 기존 대여 중 표시·이력·이용실적의 부서명도 함께 바꿔 집계가 끊기지 않게 합니다.
+    // 기존 대여 중 표시·이력·이용실적의 부서/업체명도 함께 바꿔 집계가 끊기지 않게 합니다.
     const state = await loadState();
     state.baskets.forEach(b => { if(b.dept === oldName) b.dept = newName; });
     state.log.forEach(l => { if(l.dept === oldName) l.dept = newName; });
@@ -1541,21 +1541,21 @@
       const err = checkDeptName(newName, name);
       if(err){ deptAdminMsg.textContent = err; return; }
       showYesNo(
-        '부서명 수정',
-        `"${name}" → "${newName}"(으)로 변경합니다. 기존 이력과 이용실적의 부서명도 함께 바뀝니다. 계속하시겠습니까?`,
+        '부서/업체명 수정',
+        `"${name}" → "${newName}"(으)로 변경합니다. 기존 이력과 이용실적의 부서/업체명도 함께 바뀝니다. 계속하시겠습니까?`,
         '예, 변경합니다', '아니오',
         () => { renameDept(name, newName); },
         () => {}
       );
     } else if(act === 'del'){
-      if(DEPARTMENTS.length <= 1){ deptAdminMsg.textContent = '부서는 최소 1개가 필요합니다.'; return; }
+      if(DEPARTMENTS.length <= 1){ deptAdminMsg.textContent = '부서/업체는 최소 1개가 필요합니다.'; return; }
       const state = lastState || await loadState();
       if(state.baskets.some(b => b.status === 'rented' && b.dept === name)){
         showAlert('삭제할 수 없음', `"${name}"은(는) 현재 대여 중인 장바구니가 있어 삭제할 수 없습니다. 반납된 뒤에 삭제해 주세요.`);
         return;
       }
       showYesNo(
-        '부서 삭제',
+        '부서/업체 삭제',
         `"${name}"을(를) 목록에서 삭제합니다. 기존 이력과 이용실적은 그대로 남습니다. 계속하시겠습니까?`,
         '예, 삭제합니다', '아니오',
         async () => {
@@ -1582,7 +1582,7 @@
     updateFieldFocus(); renderFields();
   }
 
-  // 장바구니 번호 입력 완료 후 부서 선택 단계로 넘어갈 때: 입력창 대신 확정된 번호를 텍스트로 표시
+  // 장바구니 번호 입력 완료 후 부서/업체 선택 단계로 넘어갈 때: 입력창 대신 확정된 번호를 텍스트로 표시
   function confirmBasketNumber(basketNum){
     basketBox.style.display = 'none';
     basketConfirmedNum.textContent = padBasket(basketNum) + '번';
@@ -1693,7 +1693,7 @@
       }
     }
 
-    // 대여현황 화면 (사용자 모드) - 부서 조회 후에만 표시
+    // 대여현황 화면 (사용자 모드) - 부서/업체 조회 후에만 표시
     if(!userLookupEmpId){
       userMileageSection.style.display = 'none';
     } else {
@@ -1719,13 +1719,13 @@
         ? '없음'
         : rentingBaskets.map(b => padBasket(b.id) + '번').join(', ');
 
-      // 대여 내역 (대여/반납/훼손·분실 통합 리스트, 선택한 부서 + 조회 기간 결과만)
+      // 대여 내역 (대여/반납/훼손·분실 통합 리스트, 선택한 부서/업체 + 조회 기간 결과만)
       const userVisibleLog = state.log.filter(l =>
         (l.type !== 'adjust' || isDisposeAction(l.action)) && l.type !== 'mileageRedeem' &&
         l.dept === userLookupEmpId && withinDateRange(l)
       );
       if(userVisibleLog.length === 0){
-        userInvBody.innerHTML = `<tr><td colspan="5" class="invempty">해당 부서의 대여 내역이 없습니다</td></tr>`;
+        userInvBody.innerHTML = `<tr><td colspan="5" class="invempty">해당 부서/업체의 대여 내역이 없습니다</td></tr>`;
       } else {
         userInvBody.innerHTML = userVisibleLog.map(l => {
           const isDispose = l.type === 'adjust';
@@ -1751,11 +1751,11 @@
     renderRankTable(state);
   }
 
-  // ---- 대여현황 화면: 부서로 이력·마일리지 조회 ----
+  // ---- 대여현황 화면: 부서/업체로 이력·마일리지 조회 ----
   function doUserLookup(){
     const empId = userLookupEmpInput.value.trim();
     if(!isValidDept(empId)){
-      userLookupMsg.textContent = '부서를 선택해 주세요.';
+      userLookupMsg.textContent = '부서/업체를 선택해 주세요.';
       return;
     }
     const startVal = userDateStartInput.value;
@@ -2005,7 +2005,7 @@
   resetStatsBtn.addEventListener('click', () => {
     showYesNo(
       '이용실적 초기화',
-      '부서별 누적 이용실적(마일리지)을 모두 삭제합니다. 되돌릴 수 없습니다. 계속하시겠습니까?',
+      '부서/업체별 누적 이용실적(마일리지)을 모두 삭제합니다. 되돌릴 수 없습니다. 계속하시겠습니까?',
       '예, 초기화합니다', '아니오',
       async () => {
         const state = await loadState();
@@ -2019,7 +2019,7 @@
     );
   });
 
-  // ---- 훼손/분실 신고 전용: 대여 부서로 장바구니 조회 (QR 스캔 대체) ----
+  // ---- 훼손/분실 신고 전용: 대여 부서/업체로 장바구니 조회 (QR 스캔 대체) ----
   function searchRentedBasketsByQuery(state, query){
     const q = query.trim();
     if(!DEPARTMENTS.includes(q)) return [];
@@ -2040,7 +2040,7 @@
   empLookupSearchBtn.addEventListener('click', async () => {
     const query = empLookupInput.value;
     if(!DEPARTMENTS.includes(query.trim())){
-      empLookupResults.innerHTML = '<div class="qr-lookup-empty">부서를 선택해 주세요.</div>';
+      empLookupResults.innerHTML = '<div class="qr-lookup-empty">부서/업체를 선택해 주세요.</div>';
       return;
     }
     const state = await loadState();
@@ -2339,15 +2339,15 @@
           const renterId = basket.dept;
           showYesNo(
             '반납자 확인',
-            `장바구니 ${padBasket(basketNum)}번은 ${renterId}에서 대여하였습니다. 반납하시는 분도 같은 부서가 맞습니까?`,
+            `장바구니 ${padBasket(basketNum)}번은 ${renterId}에서 대여하였습니다. 반납하시는 분도 같은 부서/업체가 맞습니까?`,
             '예, 맞습니다', '아니오',
             () => {
-              // 예 - 대여 부서에서 반납 -> 부서 선택 없이 바로 처리
+              // 예 - 대여 부서/업체에서 반납 -> 부서/업체 선택 없이 바로 처리
               deptValue = renterId;
               processFlow();
             },
             () => {
-              // 아니오 - 다른 부서가 반납 -> 반납 부서 선택 화면으로 이동
+              // 아니오 - 다른 부서/업체가 반납 -> 반납 부서/업체 선택 화면으로 이동
               inputPhase = 'emp';
               confirmBasketNumber(basketNum);
               activeField = 'emp';
@@ -2361,7 +2361,7 @@
             showAlert('처리 실패', `장바구니 ${padBasket(basketNum)}번은 대여 중이 아니라 신고할 수 없습니다. 대여 중인 장바구니만 훼손/분실 신고가 가능합니다.`);
             return;
           }
-          // 장바구니 번호(+신고유형) 확인 완료 -> 신고 부서만 선택하는 화면으로 이동
+          // 장바구니 번호(+신고유형) 확인 완료 -> 신고 부서/업체만 선택하는 화면으로 이동
           inputPhase = 'emp';
           reportReasonGroup.style.display = 'none';
           confirmBasketNumber(basketNum);
@@ -2370,7 +2370,7 @@
           updateFieldFocus();
           return;
         }
-        // 대여: 장바구니 번호 확인 완료 -> 부서 선택 단계로 이동
+        // 대여: 장바구니 번호 확인 완료 -> 부서/업체 선택 단계로 이동
         inputPhase = 'emp';
         confirmBasketNumber(basketNum);
         activeField = 'emp';
@@ -2379,7 +2379,7 @@
       }
       // inputPhase === 'emp'
       if(!isValidDept(deptValue)){
-        showAlert('입력 오류', '부서를 선택해 주세요.');
+        showAlert('입력 오류', '부서/업체를 선택해 주세요.');
         return;
       }
       if(flowMode === '훼손분실'){
@@ -2483,7 +2483,7 @@
     rows.push(['폐기/분실(누적)', disposedCount]);
     rows.push([]);
     rows.push(['입출고 이력']);
-    rows.push(['일자','시간','구분','부서','장바구니번호','사유','수량','잔여재고']);
+    rows.push(['일자','시간','구분','부서/업체','장바구니번호','사유','수량','잔여재고']);
     state.log.forEach(l => {
       const isAdjust = l.type === 'adjust';
       const { label } = classifyLogRow(l);
@@ -2510,7 +2510,7 @@
     rows.push(['마일리지 산정기준', '대여 1점/건, 반납 30분이내 0점 / 30분~24시간 3점 / 24시간초과~5일이내 2점 / 5일초과 1점']);
     rows.push(['참고', '대여횟수·반납횟수·적립마일리지 모두 조회기간 기준']);
     rows.push([]);
-    rows.push(['순위','부서','대여횟수','반납횟수','적립마일리지','누적반납횟수','마일리지지급대상']);
+    rows.push(['순위','부서/업체','대여횟수','반납횟수','적립마일리지','누적반납횟수','마일리지지급대상']);
     ranked.forEach((r, i) => {
       const isRewardEligible = r.cumulativeReturn > 0 && r.cumulativeReturn % REWARD_EVERY === 0;
       rows.push([i+1, r.id, r.rentCount, r.returnCount, r.earned, r.cumulativeReturn, isRewardEligible ? 'Y' : '']);
@@ -2545,7 +2545,7 @@
       </tr>`).join('');
   }
 
-  const basketListThead3 = '<tr><th>장바구니 번호</th><th>상태</th><th>대여 부서</th><th>관리</th></tr>';
+  const basketListThead3 = '<tr><th>장바구니 번호</th><th>상태</th><th>대여 부서/업체</th><th>관리</th></tr>';
 
   basketListBody.addEventListener('click', (e) => {
     const btn = e.target.closest('.basket-edit-btn');
@@ -2564,7 +2564,7 @@
     basketEditTitle.textContent = `장바구니 ${padBasket(basketId)}번 상태 변경`;
     basketEditBody.textContent = isRented
       ? `현재 상태: 대여중 (${empLabel(lastState, basket.dept)}). "대여가능"으로 변경하시겠습니까?`
-      : '현재 상태: 대여가능. "대여중"으로 변경하려면 대여 부서를 선택하세요.';
+      : '현재 상태: 대여가능. "대여중"으로 변경하려면 대여 부서/업체를 선택하세요.';
     basketEditEmpField.style.display = isRented ? 'none' : '';
     basketEditEmpInput.value = '';
     basketEditMsg.textContent = '';
@@ -2595,7 +2595,7 @@
     } else {
       const empId = basketEditEmpInput.value.trim();
       if(!isValidDept(empId)){
-        basketEditMsg.textContent = '대여 부서를 선택해 주세요.';
+        basketEditMsg.textContent = '대여 부서/업체를 선택해 주세요.';
         return;
       }
       basket.status = 'rented';
