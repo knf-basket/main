@@ -496,6 +496,59 @@
   .mileagebox{flex-shrink:0;margin-top:16px !important;padding:0 !important;overflow:hidden;font-size:inherit !important;}
   .mileagebox .mb-title{padding:9px 14px;background:#0E4A2B;color:#fff;font-family:'Jua','Noto Sans KR',sans-serif;font-size:16px;}
   .mileagebox > div:last-child{background:#fff;}
+
+  /* ===== 스마트폰 화면에 꽉 차게: 앱 화면(프레임) 높이·폭에 비례해 크기를 조절, 남는 공간은 대여/반납 버튼이 채움 ===== */
+  .header{padding:clamp(8px,1.6cqh,16px) 14px 0;}
+  .header > div:first-child{padding:clamp(6px,1.1cqh,10px) 16px;}
+  .header .title{font-size:clamp(16px,2.4cqh,20px);}
+  .header .sub{font-size:clamp(10px,1.4cqh,12px);line-height:1.3;}
+  .screen{padding:clamp(8px,1.8cqh,20px) 18px;}
+  .hero{--fs:clamp(24px,min(5.3cqh,calc((100cqw - 44px)/8.9)),46px);align-items:center;justify-content:space-between;gap:8px;padding:0 2px;}
+  .hero-t1,.hero-t2{font-size:var(--fs);}
+  .hero-sub{white-space:nowrap;font-size:min(clamp(11px,1.8cqh,15px),3.7cqw);margin-top:clamp(4px,1cqh,10px);padding:0 2px;flex-shrink:0;}
+  .hero-bag{--u:calc(var(--fs)*1.54);width:var(--u);margin-top:0;}
+  .bag-handle{width:calc(var(--u)*.52);height:calc(var(--u)*.27);border-width:calc(var(--u)*.058);border-radius:calc(var(--u)*.27) calc(var(--u)*.27) 0 0;}
+  .bag-body{width:var(--u);height:calc(var(--u)*1.13);background-size:calc(var(--u)/4) calc(var(--u)/4);border-width:calc(var(--u)*.03);}
+  .target-pill{margin-top:clamp(8px,1.8cqh,18px);padding:clamp(5px,1cqh,10px) 14px;font-size:clamp(11.5px,1.6cqh,13.5px);}
+  .bigbtnrow{flex:1 1 auto;min-height:84px;margin-top:clamp(8px,1.8cqh,18px);gap:clamp(8px,1.5cqh,14px);}
+  .bigbtn{padding:8px 6px;font-size:clamp(20px,3.5cqh,32px);gap:clamp(4px,1cqh,10px);border-radius:clamp(16px,2.6cqh,24px);}
+  .bigbtn .bigicon svg{width:clamp(26px,5.2cqh,50px);height:clamp(26px,5.2cqh,50px);}
+  .bigbtn.reportbig{flex:none;margin-top:clamp(6px,1.3cqh,12px);padding:clamp(8px,1.5cqh,14px);font-size:clamp(13px,1.9cqh,16px);}
+  .bigbtn.reportbig .bigicon svg{width:20px;height:20px;}
+  .mileagebox{margin-top:clamp(8px,1.8cqh,18px) !important;}
+  .mileagebox .mb-title{padding:clamp(5px,1cqh,10px) 14px;font-size:clamp(14px,2cqh,17px);}
+  .mileagebox > div:last-child{font-size:clamp(10.5px,1.5cqh,13px) !important;grid-template-columns:1fr 1fr 1fr 1fr 1fr 1.3fr !important;}
+  .mileagebox > div:last-child > div{padding-top:clamp(3px,.9cqh,9px) !important;padding-bottom:clamp(3px,.9cqh,9px) !important;}
+  .mileagebox > div:last-child > div[style*="font-weight:900"]{font-size:clamp(13px,2cqh,17px) !important;}
+  .tab{padding:clamp(6px,1.2cqh,12px) 4px clamp(7px,1.3cqh,13px);font-size:clamp(11px,1.5cqh,13px);}
+  .tab .icon{font-size:clamp(18px,2.8cqh,26px);margin-bottom:2px;}
+  .cp-ta{min-height:clamp(56px,11cqh,130px);}
+  @container (max-height:640px){
+    .screen .modal-field{margin-top:8px;}
+    .cp-note{margin-bottom:0;line-height:1.45;}
+  }
+
+  /* ===== 스마트폰 화면비율(약 9:19.5) 프레임: PC에서 볼 때도 폰 비율로 표시 ===== */
+  .app{container-type:size;}
+  @media (min-width:620px){
+    .app:not(.admin-wide){
+      height:min(900px,96dvh);
+      width:calc(min(900px,96dvh) * 9 / 19.5);
+      min-width:340px;
+      max-width:480px;
+    }
+  }
+
+  /* ===== 사용자 모드: 상단 헤더 제거(관리자 모드에서만 표시), 문의/관리자 버튼 위치 변경 ===== */
+  .header{display:none;}
+  .app.admin-wide .header{display:flex;}
+  .hero-contact{white-space:nowrap;font-size:min(clamp(10.5px,1.6cqh,13px),3.4cqw);color:#5E7466;margin-top:clamp(2px,.5cqh,5px);padding:0 2px;flex-shrink:0;}
+  .reportrow{display:flex;gap:8px;align-items:stretch;flex-shrink:0;margin-top:clamp(6px,1.3cqh,12px);}
+  .reportrow .bigbtn.reportbig{flex:1;width:auto;margin-top:0;}
+  .adminsmall{flex:none;border:1px solid #CBE3BB;background:rgba(255,255,255,.7);color:#5E7466;border-radius:16px;padding:0 12px;font-size:clamp(11px,1.5cqh,12.5px);font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;}
+  .adminsmall:active{background:#E4F3DF;}
+  .screen{padding-top:clamp(12px,2.2cqh,22px);}
+  .screen#screen-home{padding-top:clamp(18px,3.2cqh,32px);}
 </style>
 </head>
 <body>
@@ -513,7 +566,7 @@
       <div style="min-width:0;flex:1;">
         <div class="title">KNF 장바구니 대여시스템</div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:2px;">
-          <div class="sub" style="margin-top:0;min-width:0;flex:1;">※ 이용 문의사항은 ESG협력부(☎3461)로 연락주시기 바랍니다.</div>
+          <div style="flex:1;"></div>
           <button class="adminbtn" id="adminBtn">🔒 관리자</button>
         </div>
       </div>
@@ -529,16 +582,20 @@
         <div class="hero-text">
           <div class="hero-t1">다회용 장바구니</div>
           <div class="hero-t2">무인 대여·반납</div>
-          <div class="hero-sub">일회용 비닐봉투 없이,<br>장바구니로 가볍게 담아가세요</div>
         </div>
         <div class="hero-bag" aria-hidden="true"><div class="bag-handle"></div><div class="bag-body"></div></div>
       </div>
+      <div class="hero-sub">일회용 비닐봉투 없이, 장바구니로 가볍게 담아가세요</div>
+      <div class="hero-contact">※ 이용 문의: ESG협력부 (☎3461)</div>
       <div class="target-pill"><span>이용대상</span>한전원자력연료 및 입주 협력기업 임직원</div>
       <div class="bigbtnrow">
         <button class="bigbtn rentbig" id="goRentBtn"><span class="bigicon" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg></span>대여</button>
         <button class="bigbtn returnbig" id="goReturnBtn"><span class="bigicon" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"></polyline><path d="M20 20v-7a4 4 0 0 0-4-4H4"></path></svg></span>반납</button>
       </div>
+      <div class="reportrow">
         <button class="bigbtn reportbig" id="goReportBtn"><span class="bigicon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></span>훼손·분실 신고</button>
+        <button type="button" class="adminsmall" id="adminEnterBtn">🔒 관리자</button>
+      </div>
       <div class="mileagebox">
         <div class="mb-title">마일리지 적립 안내</div>
         <div style="display:grid;grid-template-columns:repeat(6,1fr);text-align:center;font-size:11.5px;line-height:1.3"><div style="padding:8px 2px;background:#E9F4DF;font-weight:700;border-right:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">대여</div><div style="grid-column:span 4;padding:8px 2px;background:#E9F4DF;font-weight:700;border-right:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">반납 (대여~반납 시간)</div><div style="padding:8px 2px;background:#E9F4DF;font-weight:700;display:flex;align-items:center;justify-content:center">훼손·분실</div><div style="padding:6px 2px;color:#5E7466;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">건당</div><div style="padding:6px 2px;color:#5E7466;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">1시간<br>미만</div><div style="padding:6px 2px;color:#5E7466;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">1~24<br>시간</div><div style="padding:6px 2px;color:#5E7466;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">24시간<br>~5일</div><div style="padding:6px 2px;color:#5E7466;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">5일<br>이상</div><div style="padding:6px 2px;color:#5E7466;border-top:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">신고 시</div><div style="padding:9px 2px;font-weight:900;font-size:15px;color:#1F7D3F;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA">1점</div><div style="padding:9px 2px;font-weight:900;font-size:15px;color:#5E7466;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA">0점</div><div style="padding:9px 2px;font-weight:900;font-size:15px;color:#D9480F;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA">3점</div><div style="padding:9px 2px;font-weight:900;font-size:15px;color:#D9480F;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA">2점</div><div style="padding:9px 2px;font-weight:900;font-size:15px;color:#D9480F;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA">1점</div><div style="padding:9px 2px;font-weight:900;font-size:15px;color:#5E7466;border-top:1px solid #D5E5CA">0점</div></div>
@@ -3001,6 +3058,7 @@
     loadState().then(render);
   }
 
+  document.getElementById('adminEnterBtn').addEventListener('click', () => adminBtn.click());
   adminBtn.addEventListener('click', () => {
     if(adminMode){ exitAdminMode(); }
     else { openPinModal(); }
