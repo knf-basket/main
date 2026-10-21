@@ -23,27 +23,31 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="KNF 장바구니 대여시스템">
-<meta name="theme-color" content="#16323F">
+<meta name="theme-color" content="#0E4A2B">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#F3F4EF;
+    --bg:#F1F8EC;
     --panel:#FFFFFF;
-    --line:#DDE1D8;
-    --ink:#1E2724;
-    --sub:#6B7570;
-    --navy:#16323F;
-    --navy-2:#20465A;
-    --gold:#C4902F;
-    --gold-bg:#FBF2E2;
-    --ok:#2F8F5B;
-    --ok-bg:#E7F3EC;
-    --rent:#C9622C;
-    --rent-bg:#FBEBE1;
+    --line:#D5E5CA;
+    --ink:#183321;
+    --sub:#5E7466;
+    --navy:#0E4A2B;
+    --navy-2:#1F7D3F;
+    --leaf:#7DB342;
+    --gold:#F0AE1B;
+    --gold-bg:#FFF5D6;
+    --ok:#2E8B3E;
+    --ok-bg:#E4F3DF;
+    --rent:#EE6A1F;
+    --rent-bg:#FFEBDD;
     font-family:-apple-system,BlinkMacSystemFont,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
   input,textarea{user-select:text;-webkit-user-select:text;}
-  html,body{margin:0;padding:0;background:#E4E6E0;height:100%;overflow:hidden;}
+  html,body{margin:0;padding:0;background:#D9EBCD;height:100%;overflow:hidden;}
   :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
   .app{
     background:var(--bg);
@@ -238,7 +242,7 @@
   .invtable.compact th:nth-child(4),.invtable.compact td:nth-child(4){width:22%;}
   .invtable.compact th:nth-child(5),.invtable.compact td:nth-child(5){width:19%;}
   .invtable th{text-align:left;color:var(--sub);font-weight:600;padding:9px 8px;border-bottom:1px solid var(--line);font-size:12.5px;position:sticky;top:0;background:var(--bg);}
-  .invtable td{padding:10px 8px;border-bottom:1px solid #EEF0EA;}
+  .invtable td{padding:10px 8px;border-bottom:1px solid #E6F0DE;}
   #userMileageSection{display:flex;flex-direction:column;}
   .basket-link{color:var(--navy);font-weight:700;text-decoration:underline;cursor:pointer;}
   .iotag{font-size:12px;font-weight:700;padding:3px 9px;border-radius:10px;}
@@ -262,7 +266,7 @@
     padding:5px 10px;border-radius:14px;font-size:12px;font-weight:700;cursor:pointer;
     white-space:nowrap;
   }
-  .mini-btn:hover{background:#EEF1F6;}
+  .mini-btn:hover{background:#E8F3DF;}
   .deptlist{border:1.5px solid var(--line);border-radius:12px;background:var(--panel);max-height:42vh;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:0 0 12px;}
   .deptitem{padding:14px 16px;font-size:17px;color:var(--navy);border-bottom:1px solid var(--line);cursor:pointer;}
   .deptitem:last-child{border-bottom:none;}
@@ -284,13 +288,13 @@
     padding:14px 12px;margin-bottom:11px;border-radius:12px;font-size:16px;font-weight:700;
     font-family:inherit;cursor:pointer;transition:background .12s ease, transform .1s ease;
   }
-  .lookup-btn:active{background:#EEF1F6;transform:scale(.98);}
+  .lookup-btn:active{background:#E8F3DF;transform:scale(.98);}
   .cp-ta{width:100%;min-height:130px;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;background:#fff;color:var(--navy);resize:vertical;box-sizing:border-box;}
   .cp-note{font-size:12.5px;color:var(--sub);line-height:1.6;margin-bottom:6px;}
   .cp-item{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#fff;}
   .cp-item.done{background:#F4F6F8;opacity:.8;}
   .cp-head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--sub);margin-bottom:6px;}
-  .cp-cat{display:inline-block;background:#EEF1F6;color:var(--navy);border-radius:10px;padding:2px 9px;font-weight:700;font-size:12px;margin-right:6px;}
+  .cp-cat{display:inline-block;background:#E8F3DF;color:var(--navy);border-radius:10px;padding:2px 9px;font-weight:700;font-size:12px;margin-right:6px;}
   .cp-text{font-size:15px;line-height:1.55;white-space:pre-wrap;word-break:break-word;color:var(--navy);}
   .cp-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;}
   .cp-acts button{border:1px solid var(--line);background:#fff;border-radius:16px;padding:6px 14px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;color:var(--navy);}
@@ -315,7 +319,7 @@
   /* -- 실적 -- */
   .board-table{width:100%;border-collapse:collapse;font-size:16px;}
   .board-table th{text-align:left;color:var(--sub);font-weight:600;padding:11px 8px;border-bottom:1px solid var(--line);font-size:13px;}
-  .board-table td{padding:13px 8px;border-bottom:1px solid #EEF0EA;}
+  .board-table td{padding:13px 8px;border-bottom:1px solid #E6F0DE;}
   .rank{font-weight:700;color:var(--navy);width:28px;}
   .badge{display:inline-block;background:var(--gold-bg);color:var(--gold);font-size:12.5px;font-weight:700;padding:3px 9px;border-radius:10px;}
   .periodrow{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
@@ -414,6 +418,84 @@
     25%{transform:translateX(-6px);}
     75%{transform:translateX(6px);}
   }
+
+  /* ===== 테마: 제로웨이스트 포스터 (숲녹색 · 연두 · 오렌지) ===== */
+  .app{background:linear-gradient(180deg,#F6FBF1 0%,#EAF4E1 100%);}
+  .header{
+    position:relative;overflow:hidden;
+    background:linear-gradient(120deg,#0A3B22 0%,#14602F 55%,#2B8A3E 100%);
+    border-bottom:3px solid var(--gold);
+    box-shadow:0 4px 14px rgba(14,74,43,.25);
+  }
+  .header::after{
+    content:"";position:absolute;right:0;top:0;bottom:0;width:230px;pointer-events:none;
+    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='120' viewBox='0 0 220 120'><g fill='%23FFFFFF' fill-opacity='.13'><path d='M170 8c32 6 50 30 44 62-30-2-52-22-44-62z'/><path d='M120 40c26-2 44 12 50 38-26 4-46-8-50-38z'/><path d='M196 70c20 2 28 18 24 38-20 0-30-14-24-38z'/></g></svg>") no-repeat right center / auto 100%;
+  }
+  .header > *{position:relative;z-index:1;}
+  .header .title{letter-spacing:-.3px;text-shadow:0 1px 2px rgba(0,0,0,.25);}
+  .header .clock{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.22);}
+  .screen#screen-home{
+    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='160' viewBox='0 0 200 160'><g fill='%237DB342' fill-opacity='.16'><path d='M10 150C0 112 18 84 52 74c8 36-8 66-42 76z'/><path d='M56 154c-6-30 6-54 32-64 8 28-4 52-32 64z'/><path d='M96 156c-2-22 8-38 28-46 4 22-6 38-28 46z'/></g></svg>") no-repeat left bottom / 200px auto;
+  }
+  h3.sect{color:var(--navy);font-size:15px;letter-spacing:0;}
+  h3.sect:not([style*="flex"])::before{content:"🌿";margin-right:6px;}
+  .empdisplay,.stockcard,.cp-item,.qr-lookup-row{
+    border-color:var(--line);border-radius:16px;
+    box-shadow:0 2px 8px rgba(14,74,43,.07);
+  }
+  .key{border-radius:14px;border-color:var(--line);box-shadow:0 2px 0 rgba(14,74,43,.08);color:var(--navy);}
+  .key:active{background:var(--ok-bg);}
+  .bigbtn{box-shadow:0 8px 18px rgba(14,74,43,.18);}
+  .bigbtn.rentbig{background:linear-gradient(160deg,#2F9A45,#0E5A2F);color:#fff;border:none;}
+  .bigbtn.returnbig{background:linear-gradient(160deg,#FF8A3D,#EA5A12);color:#fff;border:none;box-shadow:0 8px 18px rgba(234,90,18,.28);}
+  .bigbtn.reportbig{background:#fff;color:#B0473B;border:2px solid #E3B3AA;box-shadow:0 4px 12px rgba(176,71,59,.10);}
+  .actbtn.rentbtn{background:linear-gradient(160deg,#2F9A45,#0E5A2F);box-shadow:0 4px 12px rgba(14,90,47,.25);}
+  .actbtn.returnbtn{background:#fff;color:var(--navy);border:1.5px solid var(--navy-2);}
+  .mileagebox{
+    border:1.5px solid #CBE3BB !important;border-radius:16px !important;
+    background:linear-gradient(180deg,#FFFFFF,#F3FAEC) !important;
+    box-shadow:0 2px 10px rgba(14,74,43,.08);
+  }
+  .tabbar{background:#fff;border-top:1px solid var(--line);box-shadow:0 -4px 14px rgba(14,74,43,.08);}
+  .tab.active{color:var(--navy);border-top-color:var(--leaf);background:linear-gradient(180deg,#EAF5E1,#fff);}
+  .modal-confirm{background:linear-gradient(160deg,#2F9A45,#0E5A2F);}
+  .deptitem.active{background:var(--navy-2);}
+  .adminbtn{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);color:#fff;}
+  .adminbtn.on{background:var(--gold);color:#3A2A00;border-color:var(--gold);}
+  .periodbtn.active{background:var(--navy-2);border-color:var(--navy-2);}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--leaf);outline-offset:1px;}
+
+  /* ===== 테마 A: 포스터 그대로 (헤더 알약 · 히어로 · 마일리지 표) ===== */
+  :root{font-family:'Noto Sans KR',-apple-system,BlinkMacSystemFont,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;}
+  .screen{padding:20px 18px;}
+  .header{background:transparent;border-bottom:none;box-shadow:none;padding:16px 16px 0;overflow:visible;}
+  .header::after{display:none;}
+  .header > div:first-child{background:#fff;border-radius:999px;padding:10px 16px;box-shadow:0 4px 14px rgba(14,74,43,.12);}
+  .header svg path[stroke]{stroke:#0E4A2B;}
+  .header svg path[fill="#FFFFFF"]{fill:#0E4A2B;}
+  .header .title{font-family:'Jua','Noto Sans KR',sans-serif;font-weight:400;font-size:19px;color:#0E4A2B;text-shadow:none;letter-spacing:-.3px;}
+  .header .sub{opacity:1;color:#5E7466;font-size:11.5px;}
+  .adminbtn{background:#0E4A2B;border:none;color:#fff;}
+  .adminbtn.on{background:var(--gold);color:#3A2A00;}
+  .hero{display:flex;gap:6px;align-items:flex-start;padding:6px 2px 0;flex-shrink:0;}
+  .hero-text{flex:1;min-width:0;}
+  .hero-t1,.hero-t2{font-family:'Jua','Noto Sans KR',sans-serif;font-size:38px;line-height:1.08;letter-spacing:-1px;font-weight:400;}
+  .hero-t1{color:#0E4A2B;}
+  .hero-t2{color:#5E9A2A;}
+  .hero-sub{margin-top:12px;font-size:14px;line-height:1.5;color:#2F4A38;}
+  .hero-bag{flex-shrink:0;width:104px;margin-top:4px;}
+  .bag-handle{width:54px;height:28px;margin:0 auto;border:6px solid #1F7D3F;border-bottom:none;border-radius:28px 28px 0 0;box-sizing:border-box;}
+  .bag-body{width:104px;height:118px;border-radius:6px 6px 14px 14px;border:3px solid #1F7D3F;box-sizing:border-box;background:conic-gradient(#1F7D3F 25%,#fff 0 50%,#1F7D3F 0 75%,#fff 0) 0 0/26px 26px;box-shadow:0 8px 16px rgba(14,74,43,.2);}
+  .target-pill{flex-shrink:0;margin-top:16px;padding:9px 14px;border-radius:999px;background:#E1F0D4;border:1px solid #CBE3BB;font-size:12.5px;color:#2F4A38;}
+  .target-pill span{font-weight:900;color:#0E4A2B;margin-right:8px;}
+  .bigbtnrow{grid-template-columns:1fr 1fr;flex:none;margin-top:16px;gap:12px;}
+  .bigbtn{padding:22px 8px 20px;border-radius:22px;font-family:'Jua','Noto Sans KR',sans-serif;font-weight:400;font-size:26px;gap:8px;}
+  .bigbtn .bigicon svg{width:40px;height:40px;}
+  .bigbtn.reportbig{flex-direction:row;width:100%;margin-top:12px;padding:13px;border-radius:16px;font-family:'Noto Sans KR',sans-serif;font-weight:700;font-size:15px;gap:8px;flex-shrink:0;border:1.5px solid #E3B3AA;}
+  .bigbtn.reportbig .bigicon svg{width:20px;height:20px;}
+  .mileagebox{flex-shrink:0;margin-top:16px !important;padding:0 !important;overflow:hidden;font-size:inherit !important;}
+  .mileagebox .mb-title{padding:9px 14px;background:#0E4A2B;color:#fff;font-family:'Jua','Noto Sans KR',sans-serif;font-size:16px;}
+  .mileagebox > div:last-child{background:#fff;}
 </style>
 </head>
 <body>
@@ -426,7 +508,7 @@
         <path d="M34,42 C34,26 66,26 66,42" fill="none" stroke="#FFFFFF" stroke-width="6.5" stroke-linecap="round"/>
         <path d="M50,32 C50,20 32,17 30,28 C28,38 46,42 50,32 Z" fill="#FFFFFF"/>
         <path d="M50,32 C50,20 68,17 70,28 C72,38 54,42 50,32 Z" fill="#FFFFFF"/>
-        <circle cx="50" cy="32" r="6" fill="#C4902F"/>
+        <circle cx="50" cy="32" r="6" fill="#F0AE1B"/>
       </svg>
       <div style="min-width:0;flex:1;">
         <div class="title">KNF 장바구니 대여시스템</div>
@@ -443,26 +525,23 @@
 
     <!-- 1단계: 대여/반납 선택 -->
     <div class="homestep active" id="step-buttons">
+      <div class="hero">
+        <div class="hero-text">
+          <div class="hero-t1">다회용 장바구니</div>
+          <div class="hero-t2">무인 대여·반납</div>
+          <div class="hero-sub">일회용 비닐봉투 없이,<br>장바구니로 가볍게 담아가세요</div>
+        </div>
+        <div class="hero-bag" aria-hidden="true"><div class="bag-handle"></div><div class="bag-body"></div></div>
+      </div>
+      <div class="target-pill"><span>이용대상</span>한전원자력연료 및 입주 협력기업 임직원</div>
       <div class="bigbtnrow">
         <button class="bigbtn rentbig" id="goRentBtn"><span class="bigicon" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg></span>대여</button>
         <button class="bigbtn returnbig" id="goReturnBtn"><span class="bigicon" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"></polyline><path d="M20 20v-7a4 4 0 0 0-4-4H4"></path></svg></span>반납</button>
-        <button class="bigbtn reportbig" id="goReportBtn"><span class="bigicon" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></span>훼손/분실<br>신고</button>
       </div>
-      <div style="margin-top:14px;padding:16px 18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;font-size:16px;color:var(--sub);line-height:1.6;text-align:left;">
-        <strong style="color:var(--navy);font-size:19px;">마일리지 부여기준</strong>
-        <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">
-          <div><strong style="color:#2E7D32;">대여</strong> — 1점/건</div>
-          <div>
-            <strong style="color:#1565C0;">반납</strong>
-            <div style="margin:4px 0 0 4px;display:flex;flex-direction:column;gap:3px;">
-              <div>· 1시간 미만 — 0점</div>
-              <div>· 1시간 이상~24시간 미만 — 3점</div>
-              <div>· 24시간 이상~5일 미만 — 2점</div>
-              <div>· 5일 이상 — 1점</div>
-            </div>
-          </div>
-          <div><strong style="color:#B0473B;">훼손/분실</strong> — 마일리지 부여 없음(0점)</div>
-        </div>
+        <button class="bigbtn reportbig" id="goReportBtn"><span class="bigicon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></span>훼손·분실 신고</button>
+      <div class="mileagebox">
+        <div class="mb-title">마일리지 적립 안내</div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);text-align:center;font-size:11.5px;line-height:1.3"><div style="padding:8px 2px;background:#E9F4DF;font-weight:700;border-right:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">대여</div><div style="grid-column:span 4;padding:8px 2px;background:#E9F4DF;font-weight:700;border-right:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">반납 (대여~반납 시간)</div><div style="padding:8px 2px;background:#E9F4DF;font-weight:700;display:flex;align-items:center;justify-content:center">훼손·분실</div><div style="padding:6px 2px;color:#5E7466;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">건당</div><div style="padding:6px 2px;color:#5E7466;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">1시간<br>미만</div><div style="padding:6px 2px;color:#5E7466;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">1~24<br>시간</div><div style="padding:6px 2px;color:#5E7466;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">24시간<br>~5일</div><div style="padding:6px 2px;color:#5E7466;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">5일<br>이상</div><div style="padding:6px 2px;color:#5E7466;border-top:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">신고 시</div><div style="padding:9px 2px;font-weight:900;font-size:15px;color:#1F7D3F;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA">1점</div><div style="padding:9px 2px;font-weight:900;font-size:15px;color:#5E7466;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA">0점</div><div style="padding:9px 2px;font-weight:900;font-size:15px;color:#D9480F;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA">3점</div><div style="padding:9px 2px;font-weight:900;font-size:15px;color:#D9480F;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA">2점</div><div style="padding:9px 2px;font-weight:900;font-size:15px;color:#D9480F;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA">1점</div><div style="padding:9px 2px;font-weight:900;font-size:15px;color:#5E7466;border-top:1px solid #D5E5CA">0점</div></div>
       </div>
     </div>
 
