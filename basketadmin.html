@@ -1,0 +1,3208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>KNF 장바구니 관리자</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  // ==== Firebase 설정: Firebase 콘솔 > 프로젝트 설정 > 일반 탭에서 복사해서 아래 값을 채워주세요 ====
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyAM7-xkuF00Ab7SsyeBo2DcI-NpVPxW-l0",
+    authDomain: "knf-basket.firebaseapp.com",
+    projectId: "knf-basket",
+    storageBucket: "knf-basket.firebasestorage.app",
+    messagingSenderId: "1000169599435",
+    appId: "1:1000169599435:web:af8a5b74994296ea2c464e"
+  };
+  firebase.initializeApp(FIREBASE_CONFIG);
+  const fbDb = firebase.firestore();
+</script>
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KNF 장바구니 관리자">
+<meta name="theme-color" content="#0E4A2B">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F1F8EC;
+    --panel:#FFFFFF;
+    --line:#D5E5CA;
+    --ink:#183321;
+    --sub:#5E7466;
+    --navy:#0E4A2B;
+    --navy-2:#1F7D3F;
+    --leaf:#7DB342;
+    --gold:#F0AE1B;
+    --gold-bg:#FFF5D6;
+    --ok:#2E8B3E;
+    --ok-bg:#E4F3DF;
+    --rent:#EE6A1F;
+    --rent-bg:#FFEBDD;
+    font-family:-apple-system,BlinkMacSystemFont,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
+  input,textarea{user-select:text;-webkit-user-select:text;}
+  html,body{margin:0;padding:0;background:#D9EBCD;height:100%;overflow:hidden;}
+  :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+  .app{
+    background:var(--bg);
+    color:var(--ink);
+    width:100%;
+    max-width:480px;
+    height:100vh;
+    height:100dvh;
+    margin:0 auto;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  /* PC 등 넓은 화면: 폰처럼 중앙 정렬된 카드 형태로 표시 */
+  @media (min-width: 620px){
+    html,body{overflow:auto;}
+    .app{
+      height:min(900px, 96vh);
+      margin:2vh auto;
+      border-radius:20px;
+      border:1px solid var(--line);
+      box-shadow:0 12px 40px rgba(20,30,25,0.18);
+    }
+  }
+  /* 관리자 모드: PC 화면에서는 표·데이터가 많으므로 폭을 넓게 사용 */
+  @media (min-width: 620px){
+    .app.admin-wide{ max-width:1100px; }
+  }
+  .header{
+    background:linear-gradient(135deg,var(--navy),var(--navy-2));
+    color:#fff;
+    padding:20px 28px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-shrink:0;
+  }
+  .header .title{font-size:22px;font-weight:700;}
+  .header .sub{font-size:13px;opacity:.75;margin-top:2px;font-weight:400;}
+  .header .clock{font-variant-numeric:tabular-nums;font-size:15px;background:rgba(255,255,255,.12);padding:7px 14px;border-radius:20px;}
+
+  .screen{display:none;flex:1;min-height:0;padding:28px 32px;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  .screen.active{display:flex;}
+
+  /* -- 홈(대여/반납) -- */
+  .empdisplay{
+    background:var(--panel);
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    padding:16px;
+    text-align:center;
+    margin-bottom:16px;
+  }
+  .empdisplay .label{font-size:11px;color:var(--sub);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;}
+  .empdisplay .digits{
+    font-family:'SFMono-Regular',Consolas,monospace;
+    font-size:30px;
+    font-weight:700;
+    letter-spacing:4px;
+    color:var(--navy);
+    min-height:38px;
+  }
+  .empdisplay .digits .cursor{opacity:.35;}
+
+  .keypad{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    grid-template-rows:repeat(4,minmax(0,100px));
+    align-content:center;
+    gap:8px;
+    flex:1;
+    min-height:0;
+  }
+  .key{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    font-size:28px;
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    transition:background .12s ease, transform .1s ease;
+    min-height:0;
+    max-height:100px;
+  }
+  .key:active{background:var(--ok-bg);transform:scale(.96);}
+  .key.clear{color:var(--rent);font-size:16px;font-weight:700;}
+  .key.clear:active{background:var(--rent-bg);}
+
+  .actionrow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;flex-shrink:0;}
+  .actbtn{
+    padding:18px;border:none;border-radius:14px;font-weight:700;font-size:18px;cursor:pointer;
+    transition:opacity .15s ease, transform .1s ease;
+  }
+  .actbtn:active{transform:scale(.97);}
+  .actbtn.rentbtn{background:var(--navy);color:#fff;}
+  .actbtn.returnbtn{background:#fff;color:var(--navy);border:1.5px solid var(--navy);}
+
+  .msg{min-height:44px;margin-top:14px;font-size:13.5px;font-weight:600;line-height:1.5;text-align:center;padding:0 6px;}
+  .msg.ok{color:var(--ok);}
+  .msg.rent{color:var(--rent);}
+  .msg.err{color:#B0473B;}
+  .msg.reward{color:var(--gold);}
+
+  /* -- 홈 3단계 플로우 -- */
+  .homestep{display:none;flex:1;flex-direction:column;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  .homestep.active{display:flex;}
+  .bigbtnrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;flex:1;}
+  .bigbtn{
+    border:none;border-radius:20px;font-weight:700;font-size:22px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;
+    transition:transform .1s ease, opacity .15s ease;
+    padding:12px 4px;box-shadow:none;-webkit-appearance:none;appearance:none;
+    word-break:keep-all;white-space:normal;line-height:1.25;
+  }
+  .bigbtn:active{transform:scale(.97);}
+  .bigbtn .bigicon{font-size:42px;box-shadow:none;filter:none;}
+  .bigbtn .bigicon svg{display:block;filter:none;width:42px;height:42px;}
+  .bigbtn.rentbig{background:#fff;color:var(--navy);border:2px solid var(--navy);}
+  .bigbtn.returnbig{background:#fff;color:var(--navy);border:2px solid var(--navy);}
+  .bigbtn.reportbig{background:#fff;color:#B0473B;border:2px solid #B0473B;font-size:18px;}
+
+  .stepTitle{font-size:19px;font-weight:700;color:var(--ink);margin-bottom:14px;text-align:center;}
+  /* .app는 항상 최대 480px 폭의 카드로 렌더링되므로(태블릿 가로모드에서도 동일),
+     아래 필드박스 스타일은 뷰포트 폭이 아니라 이 고정폭 카드 기준으로 항상 적용됩니다. */
+  .fieldbox{
+    background:var(--panel);border:1.5px solid var(--line);border-radius:14px;
+    padding:10px 16px;margin-bottom:8px;cursor:pointer;transition:border-color .15s ease;
+    display:flex;flex-direction:column;align-items:flex-start;gap:2px;
+  }
+  .fieldbox.static{cursor:default;}
+  .fieldbox.focused{border-color:var(--gold);}
+  .fieldbox .label{font-size:16px;color:var(--sub);font-weight:700;flex-shrink:0;white-space:nowrap;}
+  .fieldbox .digits{
+    font-family:'SFMono-Regular',Consolas,monospace;font-size:22px;font-weight:700;
+    color:var(--navy);min-height:28px;text-align:left;width:100%;
+  }
+  .fieldbox .digits .cursor{opacity:.35;}
+  .fieldbox .periodrow{flex:0 0 auto;width:100%;margin-bottom:0;}
+
+  .fieldrow{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .fieldrow .fieldbox{margin-bottom:0;}
+
+  @media (max-width: 560px){
+    .fieldrow{grid-template-columns:1fr;}
+  }
+
+  @media (max-width: 360px){
+    .fieldbox .label{font-size:15px;}
+    .fieldbox .digits{font-size:20px;}
+    .keypad{gap:6px;}
+    .key{font-size:22px;}
+  }
+
+  .resultbox{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;}
+  .resultIcon{font-size:60px;}
+  .resultTitle{font-size:22px;font-weight:700;}
+  .resultTitle.success{color:var(--ok);}
+  .resultTitle.fail{color:#B0473B;}
+  .resultMsg{font-size:16px;color:var(--sub);line-height:1.6;padding:0 10px;}
+
+  /* -- 재고관리(입출고 현황) -- */
+  h3.sect{font-size:14px;color:var(--sub);font-weight:700;letter-spacing:.5px;margin:0 0 14px 0;text-transform:uppercase;}
+  .stockcards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+  .stockcards.admin4{grid-template-columns:repeat(4,1fr);}
+  .stockcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 10px;text-align:center;transition:border-color .15s ease, transform .1s ease;}
+  .stockcard.clickable{cursor:pointer;}
+  .stockcard.clickable:active{transform:scale(.96);}
+  .stockcard.clickable:hover{border-color:var(--gold);}
+  .stockcard .num{font-family:'SFMono-Regular',Consolas,monospace;font-size:30px;font-weight:700;color:var(--navy);}
+  .stockcard.total .num{color:var(--navy);}
+  .stockcard.instock .num{color:var(--ok);}
+  .stockcard.outstock .num{color:var(--rent);}
+  .stockcard.disposed .num{color:#8B5CF6;}
+  .stockcard .clabel{font-size:12px;color:var(--sub);margin-top:5px;}
+  .stockcards.admin4 .stockcard{padding:14px 6px;}
+  .stockcards.admin4 .stockcard .num{font-size:24px;}
+  .stockcards.admin4 .stockcard .clabel{font-size:11px;}
+  .invtable-wrap{flex:1;overflow-y:auto;overflow-x:auto;}
+  .invtable-wrap.no-hscroll{overflow-x:hidden;}
+  .invtable-wrap.full{flex:none;overflow-y:visible;max-height:none;}
+  .invtable{width:100%;min-width:640px;border-collapse:collapse;font-size:14px;}
+  .invtable.compact{min-width:0;table-layout:fixed;font-size:13px;}
+  .invtable.compact th,.invtable.compact td{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:10px 4px;}
+  .invtable.compact th:first-child,.invtable.compact td:first-child{padding-left:2px;}
+  .invtable.compact th:last-child,.invtable.compact td:last-child{padding-right:2px;}
+  .invtable.compact th:nth-child(1),.invtable.compact td:nth-child(1){width:17%;}
+  .invtable.compact th:nth-child(2),.invtable.compact td:nth-child(2){width:27%;}
+  .invtable.compact th:nth-child(3),.invtable.compact td:nth-child(3){width:15%;}
+  .invtable.compact th:nth-child(4),.invtable.compact td:nth-child(4){width:22%;}
+  .invtable.compact th:nth-child(5),.invtable.compact td:nth-child(5){width:19%;}
+  .invtable th{text-align:left;color:var(--sub);font-weight:600;padding:9px 8px;border-bottom:1px solid var(--line);font-size:12.5px;position:sticky;top:0;background:var(--bg);}
+  .invtable td{padding:10px 8px;border-bottom:1px solid #E6F0DE;}
+  #userMileageSection{display:flex;flex-direction:column;}
+  .basket-link{color:var(--navy);font-weight:700;text-decoration:underline;cursor:pointer;}
+  .iotag{font-size:12px;font-weight:700;padding:3px 9px;border-radius:10px;}
+  .iotag.in{background:var(--ok-bg);color:var(--ok);}
+  .iotag.out{background:var(--rent-bg);color:var(--rent);}
+  .iotag.dispose{background:#EFE9FE;color:#8B5CF6;}
+  .invempty{color:var(--sub);text-align:center;padding:20px 8px;font-size:14px;}
+  .del-staff-btn{
+    background:none;border:1px solid #E3B3AA;color:#B0473B;
+    padding:5px 10px;border-radius:14px;font-size:12px;font-weight:700;cursor:pointer;
+    white-space:nowrap;
+  }
+  .del-staff-btn:hover{background:#FBEBE1;}
+  .danger-btn{
+    width:100%;background:#fff;border:1.5px solid var(--rent);color:var(--rent);
+    padding:11px 12px;border-radius:8px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;
+  }
+  .danger-btn:active{background:var(--rent-bg);}
+  .mini-btn{
+    background:none;border:1px solid var(--navy);color:var(--navy);
+    padding:5px 10px;border-radius:14px;font-size:12px;font-weight:700;cursor:pointer;
+    white-space:nowrap;
+  }
+  .mini-btn:hover{background:#E8F3DF;}
+  .deptlist{border:1.5px solid var(--line);border-radius:12px;background:var(--panel);max-height:42vh;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:0 0 12px;}
+  .deptitem{padding:14px 16px;font-size:17px;color:var(--navy);border-bottom:1px solid var(--line);cursor:pointer;}
+  .deptitem:last-child{border-bottom:none;}
+  .deptitem b{background:#FFF1BF;font-weight:800;}
+  .deptitem.active{background:var(--navy);color:#fff;}
+  .deptitem.active b{background:none;color:#FFD66B;}
+  .deptselect{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;background:#fff;color:var(--navy);}
+  .deptsearch{width:100%;box-sizing:border-box;padding:13px 14px;font-size:17px;font-family:inherit;border:1.5px solid var(--line);border-radius:12px;margin:0 0 10px;background:#fff;color:var(--navy);}
+  .deptsearch:focus{outline:2px solid var(--gold);outline-offset:1px;}
+  .deptempty{text-align:center;color:var(--sub);font-size:15px;padding:18px 0;}
+  .deptrow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 2px;border-bottom:1px solid var(--line);font-size:15px;color:var(--navy);}
+  .deptrow .dn{flex:1;min-width:0;word-break:break-all;font-weight:700;}
+  .deptrow .da{display:flex;gap:6px;flex-shrink:0;}
+  .deptrow button{text-transform:none;letter-spacing:normal;background:var(--panel);color:var(--navy);border:1px solid var(--line);padding:6px 12px;border-radius:16px;font-size:12.5px;font-weight:700;cursor:pointer;}
+  .deptrow button.del{color:#B0473B;}
+  .deptrow input{flex:1;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;}
+  .lookup-btn{
+    width:100%;background:#fff;border:1.5px solid var(--navy);color:var(--navy);
+    padding:14px 12px;margin-bottom:11px;border-radius:12px;font-size:16px;font-weight:700;
+    font-family:inherit;cursor:pointer;transition:background .12s ease, transform .1s ease;
+  }
+  .lookup-btn:active{background:#E8F3DF;transform:scale(.98);}
+  .cp-ta{width:100%;min-height:130px;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;background:#fff;color:var(--navy);resize:vertical;box-sizing:border-box;}
+  .cp-note{font-size:12.5px;color:var(--sub);line-height:1.6;margin-bottom:6px;}
+  .cp-item{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#fff;}
+  .cp-item.done{background:#F4F6F8;opacity:.8;}
+  .cp-head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--sub);margin-bottom:6px;}
+  .cp-cat{display:inline-block;background:#E8F3DF;color:var(--navy);border-radius:10px;padding:2px 9px;font-weight:700;font-size:12px;margin-right:6px;}
+  .cp-text{font-size:15px;line-height:1.55;white-space:pre-wrap;word-break:break-word;color:var(--navy);}
+  .cp-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;}
+  .cp-acts button{border:1px solid var(--line);background:#fff;border-radius:16px;padding:6px 14px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;color:var(--navy);}
+  .cp-acts button.del{color:#B3261E;border-color:#E5B8B4;}
+  .tab .badge{display:inline-block;min-width:16px;padding:0 5px;margin-left:4px;border-radius:9px;background:#B3261E;color:#fff;font-size:11px;line-height:16px;}
+  .qr-lookup-row{
+    display:flex;flex-direction:column;gap:4px;
+    padding:10px 12px;border:1px solid var(--line);border-radius:10px;
+    margin-bottom:8px;cursor:pointer;font-size:14px;background:var(--panel);
+  }
+  .qr-lookup-row:hover{border-color:var(--gold);}
+  .qr-lookup-row .qlr-top{display:flex;justify-content:space-between;align-items:center;width:100%;}
+  .qr-lookup-row .qlr-name{font-weight:700;color:var(--navy);}
+  .qr-lookup-row .qlr-basket{color:var(--rent);font-weight:700;}
+  .qr-lookup-row .qlr-time{font-size:12px;color:var(--sub);}
+  .qr-lookup-empty{color:var(--sub);font-size:13px;padding:8px 0;}
+  .stockactions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+  .stockactions .actbtn{padding:16px;font-size:16px;color:#fff;border:none;}
+  .instockbtn{background:var(--ok);}
+  .outstockbtn{background:var(--rent);}
+
+  /* -- 실적 -- */
+  .board-table{width:100%;border-collapse:collapse;font-size:16px;}
+  .board-table th{text-align:left;color:var(--sub);font-weight:600;padding:11px 8px;border-bottom:1px solid var(--line);font-size:13px;}
+  .board-table td{padding:13px 8px;border-bottom:1px solid #E6F0DE;}
+  .rank{font-weight:700;color:var(--navy);width:28px;}
+  .badge{display:inline-block;background:var(--gold-bg);color:var(--gold);font-size:12.5px;font-weight:700;padding:3px 9px;border-radius:10px;}
+  .periodrow{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+  .periodbtn{
+    flex:1;padding:10px 6px;border:1px solid var(--line);background:var(--panel);
+    border-radius:20px;font-size:13px;font-weight:700;color:var(--sub);cursor:pointer;
+    min-width:70px;
+  }
+  .periodbtn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+  /* -- 하단 탭바 -- */
+  .tabbar{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    border-top:1px solid var(--line);
+    background:var(--panel);
+    flex-shrink:0;
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  .tab{
+    padding:15px 6px;
+    text-align:center;
+    font-size:14px;
+    color:var(--sub);
+    cursor:pointer;
+    font-weight:600;
+    border-top:2.5px solid transparent;
+  }
+  .tab .icon{font-size:23px;display:block;margin-bottom:4px;}
+  .tab.active{color:var(--navy);border-top-color:var(--gold);}
+  .resetlink{
+    text-align:center;font-size:12px;color:var(--sub);
+    padding:6px 0 2px 0;text-decoration:underline;cursor:pointer;
+  }
+
+  /* -- 관리자 모드 -- */
+  .headerRight{display:flex;align-items:center;gap:10px;}
+  .adminbtn{
+    display:flex;align-items:center;gap:5px;
+    background:rgba(255,255,255,.14);
+    color:#fff;
+    border:none;
+    font-size:13px;
+    font-weight:700;
+    padding:7px 13px;
+    border-radius:20px;
+    cursor:pointer;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .adminbtn.on{background:var(--gold);color:#20180a;}
+  .modal-overlay{
+    display:none;
+    position:fixed;inset:0;
+    background:rgba(15,20,18,.5);
+    align-items:center;justify-content:center;
+    z-index:60;
+    padding:20px;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal-card{
+    background:var(--panel);
+    border-radius:18px;
+    padding:26px 22px;
+    width:min(320px,100%);
+    text-align:center;
+  }
+  .modal-card.wide{width:min(480px,100%);text-align:left;max-height:80vh;display:flex;flex-direction:column;}
+  .modal-card.wide .modal-title{text-align:left;}
+  .modal-title{font-size:17px;font-weight:700;color:var(--ink);}
+  .modal-sub{font-size:13px;color:var(--sub);margin-top:4px;}
+  .pindots{display:flex;gap:12px;justify-content:center;margin:18px 0 6px 0;}
+  .pindot{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--line);background:transparent;transition:background .12s ease;}
+  .pindot.filled{background:var(--navy);border-color:var(--navy);}
+  .modal-msg{min-height:18px;font-size:13px;color:#B0473B;font-weight:600;margin-bottom:8px;}
+  .modal-actions{margin-top:14px;display:flex;gap:10px;justify-content:center;}
+  .modal-cancel{
+    background:none;border:1px solid var(--line);color:var(--sub);
+    padding:9px 20px;border-radius:20px;font-size:14px;cursor:pointer;
+  }
+  .modal-confirm{
+    background:var(--navy);border:none;color:#fff;
+    padding:9px 22px;border-radius:20px;font-size:14px;font-weight:700;cursor:pointer;
+  }
+  .modal-msg-body{font-size:15px;color:var(--ink);margin-top:6px;line-height:1.5;}
+  .modal-field{text-align:left;margin-top:14px;}
+  .modal-field label{display:block;font-size:12.5px;color:var(--sub);font-weight:700;margin-bottom:5px;}
+  .modal-field input{
+    width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:8px;font-size:15px;
+    font-family:inherit;
+  }
+  .modal-field input:focus{outline:2px solid var(--gold);outline-offset:1px;}
+  .shake{animation:shakeAnim .35s;}
+  @keyframes shakeAnim{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-6px);}
+    75%{transform:translateX(6px);}
+  }
+
+  /* ===== 테마: 제로웨이스트 포스터 (숲녹색 · 연두 · 오렌지) ===== */
+  .app{background:linear-gradient(180deg,#F6FBF1 0%,#EAF4E1 100%);}
+  .header{
+    position:relative;overflow:hidden;
+    background:linear-gradient(120deg,#0A3B22 0%,#14602F 55%,#2B8A3E 100%);
+    border-bottom:3px solid var(--gold);
+    box-shadow:0 4px 14px rgba(14,74,43,.25);
+  }
+  .header::after{
+    content:"";position:absolute;right:0;top:0;bottom:0;width:230px;pointer-events:none;
+    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='120' viewBox='0 0 220 120'><g fill='%23FFFFFF' fill-opacity='.13'><path d='M170 8c32 6 50 30 44 62-30-2-52-22-44-62z'/><path d='M120 40c26-2 44 12 50 38-26 4-46-8-50-38z'/><path d='M196 70c20 2 28 18 24 38-20 0-30-14-24-38z'/></g></svg>") no-repeat right center / auto 100%;
+  }
+  .header > *{position:relative;z-index:1;}
+  .header .title{letter-spacing:-.3px;text-shadow:0 1px 2px rgba(0,0,0,.25);}
+  .header .clock{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.22);}
+  .screen#screen-home{
+    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='160' viewBox='0 0 200 160'><g fill='%237DB342' fill-opacity='.16'><path d='M10 150C0 112 18 84 52 74c8 36-8 66-42 76z'/><path d='M56 154c-6-30 6-54 32-64 8 28-4 52-32 64z'/><path d='M96 156c-2-22 8-38 28-46 4 22-6 38-28 46z'/></g></svg>") no-repeat left bottom / 200px auto;
+  }
+  h3.sect{color:var(--navy);font-size:15px;letter-spacing:0;}
+  h3.sect:not([style*="flex"])::before{content:"🌿";margin-right:6px;}
+  .empdisplay,.stockcard,.cp-item,.qr-lookup-row{
+    border-color:var(--line);border-radius:16px;
+    box-shadow:0 2px 8px rgba(14,74,43,.07);
+  }
+  .key{border-radius:14px;border-color:var(--line);box-shadow:0 2px 0 rgba(14,74,43,.08);color:var(--navy);}
+  .key:active{background:var(--ok-bg);}
+  .bigbtn{box-shadow:0 8px 18px rgba(14,74,43,.18);}
+  .bigbtn.rentbig{background:linear-gradient(160deg,#2F9A45,#0E5A2F);color:#fff;border:none;}
+  .bigbtn.returnbig{background:linear-gradient(160deg,#FF8A3D,#EA5A12);color:#fff;border:none;box-shadow:0 8px 18px rgba(234,90,18,.28);}
+  .bigbtn.reportbig{background:#fff;color:#B0473B;border:2px solid #E3B3AA;box-shadow:0 4px 12px rgba(176,71,59,.10);}
+  .actbtn.rentbtn{background:linear-gradient(160deg,#2F9A45,#0E5A2F);box-shadow:0 4px 12px rgba(14,90,47,.25);}
+  .actbtn.returnbtn{background:#fff;color:var(--navy);border:1.5px solid var(--navy-2);}
+  .mileagebox{
+    border:1.5px solid #CBE3BB !important;border-radius:16px !important;
+    background:linear-gradient(180deg,#FFFFFF,#F3FAEC) !important;
+    box-shadow:0 2px 10px rgba(14,74,43,.08);
+  }
+  .tabbar{background:#fff;border-top:1px solid var(--line);box-shadow:0 -4px 14px rgba(14,74,43,.08);}
+  .tab.active{color:var(--navy);border-top-color:var(--leaf);background:linear-gradient(180deg,#EAF5E1,#fff);}
+  .modal-confirm{background:linear-gradient(160deg,#2F9A45,#0E5A2F);}
+  .deptitem.active{background:var(--navy-2);}
+  .adminbtn{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);color:#fff;}
+  .adminbtn.on{background:var(--gold);color:#3A2A00;border-color:var(--gold);}
+  .periodbtn.active{background:var(--navy-2);border-color:var(--navy-2);}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--leaf);outline-offset:1px;}
+
+  /* ===== 테마 A: 포스터 그대로 (헤더 알약 · 히어로 · 마일리지 표) ===== */
+  :root{font-family:'Noto Sans KR',-apple-system,BlinkMacSystemFont,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;}
+  .screen{padding:20px 18px;}
+  .header{background:transparent;border-bottom:none;box-shadow:none;padding:16px 16px 0;overflow:visible;}
+  .header::after{display:none;}
+  .header > div:first-child{background:#fff;border-radius:999px;padding:10px 16px;box-shadow:0 4px 14px rgba(14,74,43,.12);}
+  .header svg path[stroke]{stroke:#0E4A2B;}
+  .header svg path[fill="#FFFFFF"]{fill:#0E4A2B;}
+  .header .title{font-family:'Jua','Noto Sans KR',sans-serif;font-weight:400;font-size:19px;color:#0E4A2B;text-shadow:none;letter-spacing:-.3px;}
+  .header .sub{opacity:1;color:#5E7466;font-size:11.5px;}
+  .adminbtn{background:#0E4A2B;border:none;color:#fff;}
+  .adminbtn.on{background:var(--gold);color:#3A2A00;}
+  .hero{display:flex;gap:6px;align-items:flex-start;padding:6px 2px 0;flex-shrink:0;}
+  .hero-text{flex:1;min-width:0;}
+  .hero-t1,.hero-t2{font-family:'Jua','Noto Sans KR',sans-serif;font-size:38px;line-height:1.08;letter-spacing:-1px;font-weight:400;}
+  .hero-t1{color:#0E4A2B;}
+  .hero-t2{color:#5E9A2A;}
+  .hero-sub{margin-top:12px;font-size:14px;line-height:1.5;color:#2F4A38;}
+  .hero-bag{flex-shrink:0;width:104px;margin-top:4px;}
+  .bag-handle{width:54px;height:28px;margin:0 auto;border:6px solid #1F7D3F;border-bottom:none;border-radius:28px 28px 0 0;box-sizing:border-box;}
+  .bag-body{width:104px;height:118px;border-radius:6px 6px 14px 14px;border:3px solid #1F7D3F;box-sizing:border-box;background:conic-gradient(#1F7D3F 25%,#fff 0 50%,#1F7D3F 0 75%,#fff 0) 0 0/26px 26px;box-shadow:0 8px 16px rgba(14,74,43,.2);}
+  .target-pill{flex-shrink:0;margin-top:16px;padding:9px 14px;border-radius:999px;background:#E1F0D4;border:1px solid #CBE3BB;font-size:12.5px;color:#2F4A38;}
+  .target-pill span{font-weight:900;color:#0E4A2B;margin-right:8px;}
+  .bigbtnrow{grid-template-columns:1fr 1fr;flex:none;margin-top:16px;gap:12px;}
+  .bigbtn{padding:22px 8px 20px;border-radius:22px;font-family:'Jua','Noto Sans KR',sans-serif;font-weight:400;font-size:26px;gap:8px;}
+  .bigbtn .bigicon svg{width:40px;height:40px;}
+  .bigbtn.reportbig{flex-direction:row;width:100%;margin-top:12px;padding:13px;border-radius:16px;font-family:'Noto Sans KR',sans-serif;font-weight:700;font-size:15px;gap:8px;flex-shrink:0;border:1.5px solid #E3B3AA;}
+  .bigbtn.reportbig .bigicon svg{width:20px;height:20px;}
+  .mileagebox{flex-shrink:0;margin-top:16px !important;padding:0 !important;overflow:hidden;font-size:inherit !important;}
+  .mileagebox .mb-title{padding:9px 14px;background:#0E4A2B;color:#fff;font-family:'Jua','Noto Sans KR',sans-serif;font-size:16px;}
+  .mileagebox > div:last-child{background:#fff;}
+
+  /* ===== 스마트폰 화면에 꽉 차게: 앱 화면(프레임) 높이·폭에 비례해 크기를 조절, 남는 공간은 대여/반납 버튼이 채움 ===== */
+  .header{padding:clamp(8px,1.6cqh,16px) 14px 0;}
+  .header > div:first-child{padding:clamp(6px,1.1cqh,10px) 16px;}
+  .header .title{font-size:clamp(16px,2.4cqh,20px);}
+  .header .sub{font-size:clamp(10px,1.4cqh,12px);line-height:1.3;}
+  .screen{padding:clamp(8px,1.8cqh,20px) 18px;}
+  .hero{--fs:clamp(24px,min(5.3cqh,calc((100cqw - 44px)/9.8)),46px);align-items:center;justify-content:space-between;gap:8px;padding:0 2px;}
+  .hero-t1,.hero-t2{font-size:var(--fs);}
+  .hero-sub{white-space:nowrap;font-size:min(clamp(11px,1.8cqh,15px),3.7cqw);margin-top:clamp(4px,1cqh,10px);padding:0 2px;flex-shrink:0;}
+  .hero-bag{--u:calc(var(--fs)*1.54);width:var(--u);margin-top:0;}
+  .bag-handle{width:calc(var(--u)*.52);height:calc(var(--u)*.27);border-width:calc(var(--u)*.058);border-radius:calc(var(--u)*.27) calc(var(--u)*.27) 0 0;}
+  .bag-body{width:var(--u);height:calc(var(--u)*1.13);background-size:calc(var(--u)/4) calc(var(--u)/4);border-width:calc(var(--u)*.03);}
+  .target-pill{margin-top:clamp(8px,1.8cqh,18px);padding:clamp(5px,1cqh,10px) 14px;font-size:clamp(11.5px,1.6cqh,13.5px);}
+  .bigbtnrow{flex:1 1 auto;min-height:84px;margin-top:clamp(8px,1.8cqh,18px);gap:clamp(8px,1.5cqh,14px);}
+  .bigbtn{padding:8px 6px;font-size:clamp(28px,min(5.4cqh,11cqw),54px);gap:clamp(4px,1cqh,10px);border-radius:clamp(16px,2.6cqh,24px);}
+  .bigbtn .bigicon svg{width:clamp(26px,5.2cqh,50px);height:clamp(26px,5.2cqh,50px);}
+  .bigbtn.reportbig{flex:none;margin-top:clamp(6px,1.3cqh,12px);padding:clamp(8px,1.5cqh,14px);font-size:clamp(13px,1.9cqh,16px);}
+  .bigbtn.reportbig .bigicon svg{width:20px;height:20px;}
+  .mileagebox{margin-top:clamp(8px,1.8cqh,18px) !important;}
+  .mileagebox .mb-title{padding:clamp(5px,1cqh,10px) 14px;font-size:clamp(14px,2cqh,17px);}
+  .mileagebox > div:last-child{font-size:clamp(10.5px,1.5cqh,13px) !important;grid-template-columns:1fr 1fr 1fr 1fr 1fr 1.3fr !important;}
+  .mileagebox > div:last-child > div{padding-top:clamp(3px,.9cqh,9px) !important;padding-bottom:clamp(3px,.9cqh,9px) !important;}
+  .mileagebox > div:last-child > div[style*="font-weight:900"]{font-size:clamp(13px,2cqh,17px) !important;}
+  .tab{padding:clamp(6px,1.2cqh,12px) 4px clamp(7px,1.3cqh,13px);font-size:clamp(11px,1.5cqh,13px);}
+  .tab .icon{font-size:clamp(18px,2.8cqh,26px);margin-bottom:2px;}
+  .cp-ta{min-height:clamp(56px,11cqh,130px);}
+  @container (max-height:640px){
+    .screen .modal-field{margin-top:8px;}
+    .cp-note{margin-bottom:0;line-height:1.45;}
+  }
+
+  /* ===== 스마트폰 화면비율(약 9:19.5) 프레임: PC에서 볼 때도 폰 비율로 표시 ===== */
+  .app{container-type:size;}
+  @media (min-width:620px){
+    .app:not(.admin-wide){
+      height:min(900px,96dvh);
+      width:calc(min(900px,96dvh) * 9 / 19.5);
+      min-width:340px;
+      max-width:480px;
+    }
+  }
+
+  /* ===== 사용자 모드: 상단 헤더 제거(관리자 모드에서만 표시), 문의/관리자 버튼 위치 변경 ===== */
+  .header{display:none;}
+  .app.admin-wide .header{display:flex;}
+  .hero-contact{white-space:nowrap;font-size:min(clamp(10.5px,1.6cqh,13px),3.4cqw);color:#5E7466;margin-top:clamp(2px,.5cqh,5px);padding:0 2px;flex-shrink:0;}
+  .reportrow{display:flex;gap:8px;align-items:stretch;flex-shrink:0;margin-top:clamp(6px,1.3cqh,12px);}
+  .reportrow .bigbtn.reportbig{flex:1;width:auto;margin-top:0;}
+  .adminsmall{flex:none;border:1px solid #CBE3BB;background:rgba(255,255,255,.7);color:#5E7466;border-radius:16px;padding:0 12px;font-size:clamp(11px,1.5cqh,12.5px);font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;}
+  .adminsmall:active{background:#E4F3DF;}
+  .screen{padding-top:clamp(12px,2.2cqh,22px);}
+  .screen#screen-home{padding-top:clamp(18px,3.2cqh,32px);}
+  .hero{justify-content:flex-start;}
+  .hero-text{flex:none;}
+  .hero-bag{margin-left:auto;margin-right:auto;}
+  .hero{gap:0;padding:0;}
+  .hero-contact{white-space:normal;line-height:1.4;font-size:min(clamp(11px,1.7cqh,13px),3.5cqw);word-break:keep-all;}
+
+  /* ===== 관리자 전용 페이지 ===== */
+  body:not(.authed) .app{visibility:hidden;}
+  .header{display:flex !important;}
+  .header .title{font-size:19px;}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1;overflow:hidden;">
+      <svg width="38" height="38" viewBox="0 0 100 100" style="flex-shrink:0;" aria-hidden="true" focusable="false">
+        <path d="M28,42 L72,42 L67,88 L33,88 Z" fill="none" stroke="#FFFFFF" stroke-width="4.5"/>
+        <path d="M34,42 C34,26 66,26 66,42" fill="none" stroke="#FFFFFF" stroke-width="6.5" stroke-linecap="round"/>
+        <path d="M50,32 C50,20 32,17 30,28 C28,38 46,42 50,32 Z" fill="#FFFFFF"/>
+        <path d="M50,32 C50,20 68,17 70,28 C72,38 54,42 50,32 Z" fill="#FFFFFF"/>
+        <circle cx="50" cy="32" r="6" fill="#F0AE1B"/>
+      </svg>
+      <div style="min-width:0;flex:1;">
+        <div class="title">KNF 장바구니 관리자</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:2px;">
+          <div style="flex:1;"></div>
+          <button class="adminbtn" id="adminBtn">로그아웃</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 홈 -->
+  <div class="screen active" id="screen-home">
+
+    <!-- 1단계: 대여/반납 선택 -->
+    <div class="homestep active" id="step-buttons">
+      <div class="hero">
+        <div class="hero-text">
+          <div class="hero-t1">다회용 장바구니</div>
+          <div class="hero-t2">무인 대여·반납</div>
+        </div>
+        <div class="hero-bag" aria-hidden="true"><div class="bag-handle"></div><div class="bag-body"></div></div>
+      </div>
+      <div class="hero-sub">일회용 비닐봉투 없이, 장바구니로 가볍게 담아가세요</div>
+      <div class="hero-contact">※ 이용문의는 불편접수 또는 ESG협력부로 문의</div>
+      <div class="bigbtnrow">
+        <button class="bigbtn rentbig" id="goRentBtn"><span class="bigicon" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg></span>대여</button>
+        <button class="bigbtn returnbig" id="goReturnBtn"><span class="bigicon" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"></polyline><path d="M20 20v-7a4 4 0 0 0-4-4H4"></path></svg></span>반납</button>
+      </div>
+      <div class="reportrow">
+        <button class="bigbtn reportbig" id="goReportBtn"><span class="bigicon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></span>훼손·분실 신고</button>
+      </div>
+      <div class="mileagebox">
+        <div class="mb-title">마일리지 적립 안내</div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);text-align:center;font-size:11.5px;line-height:1.3"><div style="padding:8px 2px;background:#E9F4DF;font-weight:700;border-right:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">대여</div><div style="grid-column:span 4;padding:8px 2px;background:#E9F4DF;font-weight:700;border-right:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">반납 (대여~반납 시간)</div><div style="padding:8px 2px;background:#E9F4DF;font-weight:700;display:flex;align-items:center;justify-content:center">훼손·분실</div><div style="padding:6px 2px;color:#5E7466;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">건당</div><div style="padding:6px 2px;color:#5E7466;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">1시간<br>미만</div><div style="padding:6px 2px;color:#5E7466;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">1~24<br>시간</div><div style="padding:6px 2px;color:#5E7466;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">24시간<br>~5일</div><div style="padding:6px 2px;color:#5E7466;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">5일<br>이상</div><div style="padding:6px 2px;color:#5E7466;border-top:1px solid #D5E5CA;display:flex;align-items:center;justify-content:center">신고 시</div><div style="padding:9px 2px;font-weight:900;font-size:15px;color:#1F7D3F;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA">1점</div><div style="padding:9px 2px;font-weight:900;font-size:15px;color:#5E7466;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA">0점</div><div style="padding:9px 2px;font-weight:900;font-size:15px;color:#D9480F;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA">3점</div><div style="padding:9px 2px;font-weight:900;font-size:15px;color:#D9480F;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA">2점</div><div style="padding:9px 2px;font-weight:900;font-size:15px;color:#D9480F;border-right:1px solid #D5E5CA;border-top:1px solid #D5E5CA">1점</div><div style="padding:9px 2px;font-weight:900;font-size:15px;color:#5E7466;border-top:1px solid #D5E5CA">0점</div></div>
+      </div>
+    </div>
+
+    <!-- 2단계: 정보 입력 -->
+    <div class="homestep" id="step-input">
+      <div class="stepTitle" id="stepInputTitle">대여 정보 입력</div>
+      <div class="fieldbox static" id="reportReasonGroup" style="display:none;">
+        <div class="label">신고 유형</div>
+        <div class="periodrow" id="reportReasonRow">
+          <button class="periodbtn active" data-reason="훼손">훼손</button>
+          <button class="periodbtn" data-reason="분실">분실</button>
+        </div>
+      </div>
+      <div class="fieldbox" id="basketBox" data-field="basket" style="display:none;">
+        <div class="label">장바구니 번호</div>
+        <div class="digits" id="basketDigitsDisplay">입력하세요<span class="cursor">|</span></div>
+      </div>
+      <div id="basketConfirmedText" style="display:none;font-size:16px;color:var(--sub);font-weight:700;margin-bottom:8px;">장바구니 번호 : <span id="basketConfirmedNum" style="color:var(--navy);"></span></div>
+      <button type="button" class="lookup-btn" id="empLookupOpenBtn" style="display:none;">🔍 대여 부서/업체로 조회</button>
+      <input type="search" id="deptSearchInput" class="deptsearch" placeholder="🔍 부서/업체명 또는 초성 입력 (예: 생산, ㅅㅅ)" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" style="display:none;" />
+      <div class="deptlist" id="deptList" style="display:none;"></div>
+      <div class="keypad" id="keypad"></div>
+      <div class="actionrow">
+        <button class="actbtn returnbtn" id="inputBackBtn">취소</button>
+        <button class="actbtn rentbtn" id="inputNextBtn">다음</button>
+      </div>
+    </div>
+
+    <!-- 3단계: 처리결과 -->
+    <div class="homestep" id="step-result">
+      <div class="resultbox">
+        <div class="resultIcon" id="resultIcon" aria-hidden="true">✅</div>
+        <div class="resultTitle" id="resultTitle"></div>
+        <div class="resultMsg" id="resultMsg"></div>
+        <button class="actbtn rentbtn" id="resultDoneBtn" style="margin-top:14px;width:100%;">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 불편사항 접수 (사용자) -->
+  <div class="screen" id="screen-complaint">
+    <h3 class="sect">불편사항 접수</h3>
+    <div class="cp-note">이용 중 불편한 점을 남겨 주세요. 접수된 내용은 관리자만 확인합니다.<br>개인정보·연락처는 적지 마세요.</div>
+    <div class="modal-field">
+      <label>부서/업체</label>
+      <input type="text" id="cpDept" class="deptselect" list="deptDatalist" placeholder="부서/업체 검색 또는 선택" autocomplete="off" />
+    </div>
+    <div class="modal-field">
+      <label>분류</label>
+      <select id="cpCat" class="deptselect"></select>
+    </div>
+    <div class="modal-field">
+      <label>내용 <span id="cpCount" style="font-weight:400;">(0/300)</span></label>
+      <textarea id="cpText" class="cp-ta" maxlength="300" placeholder="불편했던 내용을 구체적으로 적어 주세요. (예: 어제 반납한 7번 장바구니가 아직 대여중으로 표시됩니다.)"></textarea>
+    </div>
+    <button class="modal-confirm" id="cpSubmit" style="width:100%;margin-top:12px;">접수하기</button>
+    <div id="cpMsg" style="margin-top:10px;font-size:13.5px;min-height:20px;"></div>
+  </div>
+
+  <!-- 불편사항 (관리자) -->
+  <div class="screen" id="screen-inbox">
+    <h3 class="sect" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span>불편사항 접수 목록</span>
+      <select id="inboxFilter" class="deptselect" style="width:auto;padding:7px 10px;font-size:13px;">
+        <option value="open">미처리</option>
+        <option value="done">처리완료</option>
+        <option value="all">전체</option>
+      </select>
+    </h3>
+    <div id="inboxList"></div>
+  </div>
+
+  <!-- 대여현황 (사용자 모드에서도 확인 가능) -->
+  <div class="screen" id="screen-userstatus">
+    <h3 class="sect">부서/업체 대여현황 조회</h3>
+    <div class="modal-field" style="margin-top:0;">
+      <label>부서/업체</label>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="userLookupEmpInput" class="deptselect" list="deptDatalist" placeholder="부서/업체 검색 또는 선택" autocomplete="off" style="flex:1;" />
+      </div>
+    </div>
+    <div class="modal-field">
+      <label>조회 기간</label>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <input type="date" id="userDateStartInput" style="flex:1;min-width:130px;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;" />
+        <span style="color:var(--sub);">~</span>
+        <input type="date" id="userDateEndInput" style="flex:1;min-width:130px;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;" />
+      </div>
+    </div>
+    <button class="modal-confirm" id="userLookupBtn" style="width:100%;margin-top:10px;">조회</button>
+    <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+      <button id="userLookupResetBtn" style="text-transform:none;letter-spacing:normal;background:var(--panel);color:var(--sub);border:1px solid var(--line);padding:6px 14px;border-radius:20px;font-size:12.5px;font-weight:700;cursor:pointer;">다시 조회</button>
+    </div>
+    <div class="modal-msg" id="userLookupMsg" style="margin-top:6px;margin-bottom:0;"></div>
+
+    <div id="userMileageSection" style="display:none;">
+      <div style="margin-top:16px;padding:16px 18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;font-size:13px;color:var(--navy);line-height:1.9;">
+        <div>○ 조회 기간 중 적립마일리지 : <strong id="userMileageEarned">0</strong>점</div>
+        <div>○ 대여 중 : <strong id="userRentingList">없음</strong></div>
+      </div>
+
+      <h3 class="sect">
+        <span>○ 대여 내역</span>
+      </h3>
+      <div class="invtable-wrap no-hscroll full">
+        <table class="invtable compact">
+          <thead><tr><th>구분</th><th>일자</th><th>시간</th><th>장바구니 번호</th><th>마일리지</th></tr></thead>
+          <tbody id="userInvBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 재고관리(입출고 현황) -->
+  <div class="screen" id="screen-status">
+    <h3 class="sect">장바구니 재고현황</h3>
+    <div class="stockcards admin4">
+      <div class="stockcard total clickable" id="cardTotal"><div class="num" id="stockTotal">-</div><div class="clabel">총 보유수량</div></div>
+      <div class="stockcard instock clickable" id="cardIn"><div class="num" id="stockIn">-</div><div class="clabel">현재고(가용)</div></div>
+      <div class="stockcard outstock clickable" id="cardOut"><div class="num" id="stockOut">-</div><div class="clabel">대여중</div></div>
+      <div class="stockcard disposed clickable" id="cardDisposed"><div class="num" id="stockDisposed">-</div><div class="clabel">폐기/분실</div></div>
+    </div>
+    <div class="stockactions">
+      <button class="actbtn instockbtn" id="stockInBtn">입고 처리</button>
+      <button class="actbtn outstockbtn" id="stockOutBtn">폐기/분실 처리</button>
+    </div>
+    <h3 class="sect" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>장기 미반납 (7일 초과)</span>
+      <span id="overdueCount" style="font-weight:700;color:var(--sub);">0건</span>
+    </h3>
+    <div class="invtable-wrap full">
+      <table class="invtable">
+        <thead><tr><th>장바구니번호</th><th>부서/업체</th><th>대여일시</th><th>경과시간</th></tr></thead>
+        <tbody id="overdueBody"></tbody>
+      </table>
+    </div>
+    <h3 class="sect" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>입출고 이력</span>
+      <button id="exportCsvBtn" style="text-transform:none;letter-spacing:normal;background:var(--navy);color:#fff;border:none;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;">⬇ 현황·이력 CSV 다운로드</button>
+    </h3>
+    <div class="invtable-wrap full">
+      <table class="invtable">
+        <thead><tr><th>일자</th><th>시간</th><th>구분</th><th>부서/업체</th><th>장바구니번호</th><th>사유</th><th>수량</th><th>잔여재고</th></tr></thead>
+        <tbody id="invBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 장바구니 번호로 이력 조회 -->
+  <div class="screen" id="screen-lookup">
+    <h3 class="sect">장바구니 번호로 이력 조회</h3>
+    <div class="modal-field" style="margin-top:0;">
+      <label>장바구니 번호</label>
+      <div style="display:flex;gap:8px;">
+        <input type="number" id="lookupBasketInput" min="1" inputmode="numeric" placeholder="예: 12" style="flex:1;" />
+        <button class="modal-confirm" id="lookupBasketBtn" style="width:auto;padding:0 22px;">조회</button>
+      </div>
+    </div>
+    <div class="modal-msg" id="lookupBasketMsg" style="margin-top:6px;margin-bottom:0;"></div>
+
+    <div id="lookupResultSection" style="display:none;">
+      <div style="margin-top:16px;padding:16px 18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;font-size:16px;color:var(--navy);line-height:1.7;">
+        <div id="lookupBasketStatus">○ 현재 상태 : -</div>
+      </div>
+
+      <h3 class="sect" style="display:flex;justify-content:space-between;align-items:center;">
+        <span id="lookupResultTitle">○ 이력</span>
+        <button id="lookupBasketResetBtn" style="text-transform:none;letter-spacing:normal;background:var(--panel);color:var(--sub);border:1px solid var(--line);padding:6px 14px;border-radius:20px;font-size:12.5px;font-weight:700;cursor:pointer;">다시 조회</button>
+      </h3>
+      <div class="invtable-wrap full">
+        <table class="invtable">
+          <thead><tr><th>구분</th><th>일자</th><th>시간</th><th>부서/업체</th><th>사유</th><th>수량</th><th>잔여재고</th></tr></thead>
+          <tbody id="lookupBasketBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 실적 -->
+  <div class="screen" id="screen-rank">
+    <h3 class="sect" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>이용실적 TOP 5 (<span id="rankPeriodLabel">전체</span>)</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button id="exportRankCsvBtn" style="text-transform:none;letter-spacing:normal;background:var(--navy);color:#fff;border:none;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;">⬇ 이용실적 CSV 다운로드</button>
+      </div>
+    </h3>
+    <div style="font-size:12px;color:var(--sub);margin-bottom:14px;line-height:1.6;">마일리지 산정기준 = 대여 1점/건 + 반납 시 대여시간 기준(1시간 미만 0점 · 1시간 이상~24시간 미만 3점 · 24시간 이상~5일 미만 2점 · 5일 이상 1점)<br>대여횟수·반납횟수·적립마일리지 모두 선택한 기간 기준으로 합계됩니다.</div>
+    <div class="periodrow" id="periodRow">
+      <button class="periodbtn" data-period="today">최근 24시간</button>
+      <button class="periodbtn" data-period="7d">최근 7일</button>
+      <button class="periodbtn" data-period="month">이번달</button>
+      <button class="periodbtn active" data-period="all">전체</button>
+      <button class="periodbtn" data-period="custom">직접입력</button>
+    </div>
+    <div class="modal-field" id="customDateGroup" style="display:none;margin-top:0;margin-bottom:16px;">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <input type="date" id="customStartInput" style="flex:1;min-width:140px;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;" />
+        <span style="color:var(--sub);">~</span>
+        <input type="date" id="customEndInput" style="flex:1;min-width:140px;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;" />
+        <button class="modal-confirm" id="customDateApplyBtn">조회</button>
+      </div>
+      <div class="modal-msg" id="customDateMsg" style="margin-top:6px;margin-bottom:0;"></div>
+    </div>
+    <table class="board-table">
+      <thead><tr><th></th><th>부서/업체</th><th>대여횟수</th><th>반납횟수</th><th>적립마일리지</th></tr></thead>
+      <tbody id="rankBody"></tbody>
+    </table>
+    <div style="flex:1;"></div>
+  </div>
+
+  <!-- 설정 -->
+  <div class="screen" id="screen-staff">
+    <h3 class="sect">관리자 비밀번호 변경</h3>
+    <div class="fieldbox static" style="cursor:default;">
+      <div style="width:100%;display:flex;flex-direction:column;gap:10px;">
+        <input type="password" id="pwChangeCurrentInput" placeholder="현재 비밀번호" autocomplete="current-password" style="width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;" />
+        <input type="password" id="pwChangeNewInput" placeholder="새 비밀번호 (4자 이상)" autocomplete="new-password" style="width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;" />
+        <input type="password" id="pwChangeConfirmInput" placeholder="새 비밀번호 확인" autocomplete="new-password" style="width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;" />
+        <button class="modal-confirm" id="pwChangeBtn" style="width:100%;">비밀번호 변경</button>
+        <div class="modal-msg" id="pwChangeMsg" style="margin:0;"></div>
+      </div>
+    </div>
+
+    <h3 class="sect" style="margin-top:22px;display:flex;justify-content:space-between;align-items:center;">
+      <span>부서/업체 관리</span>
+      <span id="deptAdminCount" style="font-weight:700;color:var(--sub);"></span>
+    </h3>
+    <div style="font-size:12px;color:var(--sub);margin-bottom:10px;line-height:1.5;">대여/반납/신고 화면에 표시되는 부서/업체 목록입니다. 추가·수정·삭제하면 모든 기기에 바로 반영됩니다. 부서/업체명을 수정하면 기존 이력과 이용실적도 새 이름으로 함께 바뀝니다.</div>
+    <div class="fieldbox static" style="cursor:default;">
+      <div style="width:100%;display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="deptAddInput" class="deptselect" placeholder="새 부서/업체명 (20자 이내)" maxlength="20" autocomplete="off" style="flex:1;" />
+          <button class="modal-confirm" id="deptAddBtn" style="width:auto;padding:0 18px;">추가</button>
+        </div>
+        <div class="modal-msg" id="deptAdminMsg" style="margin:0;"></div>
+        <div id="deptAdminList"></div>
+        <button class="modal-cancel" id="deptSortBtn" style="width:100%;">가나다순 정렬</button>
+        <div style="border-top:1px solid var(--line);padding-top:10px;">
+          <div style="font-size:12.5px;color:var(--sub);font-weight:700;margin-bottom:6px;">엑셀/CSV 파일로 한 번에 등록</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="deptUploadMode" class="deptselect" style="flex:1;min-width:140px;width:auto;">
+              <option value="add">추가 (이미 있는 부서/업체 제외)</option>
+              <option value="replace">전체 교체</option>
+            </select>
+            <button class="modal-confirm" id="deptUploadBtn" style="width:auto;padding:0 18px;">📄 파일 업로드</button>
+          </div>
+          <input type="file" id="deptFileInput" accept=".xlsx,.xls,.csv,.txt" style="display:none;" />
+          <div style="font-size:12px;color:var(--sub);margin-top:6px;line-height:1.5;">엑셀(.xlsx, .xls)·CSV·텍스트 파일의 첫 번째 열에 부서/업체명을 한 줄씩 적어 올려 주세요. 첫 줄이 "부서/업체" 또는 "부서/업체명"이면 머리글로 보고 제외합니다.</div>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="sect" style="margin-top:22px;">데이터 초기화</h3>
+    <div style="font-size:12px;color:var(--sub);margin-bottom:10px;line-height:1.5;">아래 작업은 되돌릴 수 없습니다. 실행 전 반드시 확인해 주세요.</div>
+    <div class="fieldbox static" style="cursor:default;">
+      <div style="width:100%;display:flex;flex-direction:column;gap:10px;">
+        <button class="danger-btn" id="resetBasketsBtn">재고(대여) 상태 초기화</button>
+        <div style="font-size:12px;color:var(--sub);margin-top:-6px;">모든 장바구니를 "대여 가능" 상태로 되돌립니다. 대여/반납 이력과 실적은 유지됩니다.</div>
+        <button class="danger-btn" id="clearStockBtn">재고 전체 삭제 (보유수량 0으로)</button>
+        <div style="font-size:12px;color:var(--sub);margin-top:-6px;">등록된 장바구니를 모두 삭제하고 입고·폐기/분실 기록도 비웁니다. 이후 재고관리의 "입고 처리"로 번호를 새로 등록하세요. 대여/반납 이력과 실적은 유지됩니다.</div>
+        <button class="danger-btn" id="resetLogBtn">대여/반납 이력 초기화</button>
+        <div style="font-size:12px;color:var(--sub);margin-top:-6px;">이력 화면의 기록을 모두 삭제합니다. 재고 상태와 실적 집계는 유지됩니다.</div>
+        <button class="danger-btn" id="resetStatsBtn">이용실적(마일리지) 초기화</button>
+        <div style="font-size:12px;color:var(--sub);margin-top:-6px;">부서/업체별 누적 실적/마일리지를 모두 삭제합니다. 재고 상태와 이력은 유지됩니다.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabbar" id="tabbar">
+    <div class="tab admin-tab" data-screen="status" style="display:none;"><span class="icon" aria-hidden="true">📦</span>재고관리</div>
+    <div class="tab admin-tab" data-screen="lookup" style="display:none;"><span class="icon" aria-hidden="true">🔍</span>이력조회</div>
+    <div class="tab admin-tab" data-screen="rank" style="display:none;"><span class="icon" aria-hidden="true">🏆</span>이용실적</div>
+    <div class="tab admin-tab" data-screen="staff" style="display:none;"><span class="icon" aria-hidden="true">⚙️</span>설정</div>
+    <div class="tab admin-tab" data-screen="inbox" style="display:none;"><span class="icon" aria-hidden="true">📨</span>불편사항<span class="badge" id="inboxBadge" style="display:none;"></span></div>
+  </div>
+</div>
+
+<datalist id="deptDatalist"></datalist>
+
+<div class="modal-overlay" id="pinModal">
+  <div class="modal-card" id="pinCard">
+    <div class="modal-title">관리자 로그인</div>
+    <div class="modal-sub">KNF 장바구니 관리자 페이지입니다. 비밀번호를 입력하세요</div>
+    <div class="modal-field">
+      <label>비밀번호</label>
+      <input type="password" id="adminPasswordInput" placeholder="비밀번호" autocomplete="current-password" />
+    </div>
+    <div class="modal-msg" id="pinMsg"></div>
+    <div class="modal-actions">
+      <button class="modal-confirm" id="adminLoginBtn">로그인</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="actionModal">
+  <div class="modal-card">
+    <div class="modal-title" id="actionModalTitle"></div>
+    <div class="modal-msg-body" id="actionModalMsg"></div>
+    <div class="modal-actions" id="actionModalButtons"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="stockModal">
+  <div class="modal-card">
+    <div class="modal-title" id="stockModalTitle">입고 처리</div>
+    <div class="modal-sub" id="stockModalSub">처리 방식을 선택하세요</div>
+    <div class="periodrow" id="stockModeRow" style="margin-top:14px;">
+      <button class="periodbtn active" data-mode="range">연속(범위)</button>
+      <button class="periodbtn" data-mode="list">비연속(목록)</button>
+    </div>
+
+    <div class="modal-field" id="rangeGroup">
+      <label>장바구니 번호 범위 (연속)</label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="number" id="stockRangeStartInput" min="1" inputmode="numeric" placeholder="시작 예:101" style="flex:1;" />
+        <span style="color:var(--sub);">~</span>
+        <input type="number" id="stockRangeEndInput" min="1" inputmode="numeric" placeholder="종료 예:150" style="flex:1;" />
+      </div>
+    </div>
+
+    <div class="modal-field" id="listGroup" style="display:none;">
+      <label>장바구니 번호 목록 (쉼표로 구분, 비연속)</label>
+      <input type="text" id="stockListInput" placeholder="예: 12, 45, 78, 103" />
+    </div>
+
+    <div class="modal-field">
+      <label>사유</label>
+      <input type="text" id="stockReasonInput" placeholder="예: 신규 구매, 파손 폐기 등" />
+    </div>
+    <div class="modal-msg" id="stockModalMsg"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" id="stockCancelBtn">취소</button>
+      <button class="modal-confirm" id="stockConfirmBtn">확인</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="basketListModal">
+  <div class="modal-card wide">
+    <div class="modal-title" id="basketListTitle"></div>
+    <div class="invtable-wrap" style="max-height:340px;margin-top:10px;flex:1;">
+      <table class="invtable">
+        <thead id="basketListThead"></thead>
+        <tbody id="basketListBody"></tbody>
+      </table>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-confirm" id="basketListCloseBtn">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="empLookupModal">
+  <div class="modal-card wide" style="text-align:center;">
+    <div class="modal-title">대여 부서/업체로 장바구니 조회</div>
+    <div class="modal-field">
+      <label>대여 부서/업체</label>
+      <input type="text" id="empLookupInput" class="deptselect" list="deptDatalist" placeholder="부서/업체 검색 또는 선택" autocomplete="off" />
+      <button class="modal-confirm" id="empLookupSearchBtn" style="width:100%;margin-top:8px;">조회</button>
+      <div id="empLookupResults" style="margin-top:10px;text-align:left;"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" id="empLookupCancelBtn">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="basketEditModal">
+  <div class="modal-card">
+    <div class="modal-title" id="basketEditTitle">장바구니 상태 변경</div>
+    <div class="modal-msg-body" id="basketEditBody">-</div>
+    <div class="modal-field" id="basketEditEmpField" style="display:none;">
+      <label>대여 부서/업체</label>
+      <input type="text" id="basketEditEmpInput" class="deptselect" list="deptDatalist" placeholder="부서/업체 검색 또는 선택" autocomplete="off" />
+    </div>
+    <div class="modal-msg" id="basketEditMsg"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" id="basketEditCancelBtn">취소</button>
+      <button class="modal-confirm" id="basketEditConfirmBtn">변경</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const TOTAL = 300;
+  const REWARD_EVERY = 10;
+  const MAX_DIGITS = 6;
+  const STORE_KEY = 'knf-basket-rental-program-v1'; // 이 브라우저(태블릿) 로컬에만 저장됨 - 완전 오프라인 동작
+
+  const stockTotal = document.getElementById('stockTotal');
+  const stockIn = document.getElementById('stockIn');
+  const stockOut = document.getElementById('stockOut');
+  const invBody = document.getElementById('invBody');
+  const lookupBasketInput = document.getElementById('lookupBasketInput');
+  const lookupBasketBtn = document.getElementById('lookupBasketBtn');
+  const lookupBasketMsg = document.getElementById('lookupBasketMsg');
+  const lookupResultSection = document.getElementById('lookupResultSection');
+  const lookupBasketStatus = document.getElementById('lookupBasketStatus');
+  const lookupResultTitle = document.getElementById('lookupResultTitle');
+  const lookupBasketBody = document.getElementById('lookupBasketBody');
+  const lookupBasketResetBtn = document.getElementById('lookupBasketResetBtn');
+  let lookupBasketNum = null;
+  const userLookupEmpInput = document.getElementById('userLookupEmpInput');
+  const userDateStartInput = document.getElementById('userDateStartInput');
+  const userDateEndInput = document.getElementById('userDateEndInput');
+  const userLookupBtn = document.getElementById('userLookupBtn');
+  const userLookupMsg = document.getElementById('userLookupMsg');
+  const userLookupResetBtn = document.getElementById('userLookupResetBtn');
+  const userMileageSection = document.getElementById('userMileageSection');
+  const userMileageEarned = document.getElementById('userMileageEarned');
+  const userRentingList = document.getElementById('userRentingList');
+  const userInvBody = document.getElementById('userInvBody');
+  let userLookupEmpId = null;
+  let userDateStart = null;
+  let userDateEnd = null;
+
+  function localDateStr(d){
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  function userDateRangeDefaults(){
+    const now = new Date();
+    userDateStartInput.value = now.getFullYear() + '-01-01';
+    userDateEndInput.value = localDateStr(now);
+  }
+  userDateRangeDefaults();
+  const rankBody = document.getElementById('rankBody');
+  const rankPeriodLabel = document.getElementById('rankPeriodLabel');
+  const periodRow = document.getElementById('periodRow');
+  const customDateGroup = document.getElementById('customDateGroup');
+  const customStartInput = document.getElementById('customStartInput');
+  const customEndInput = document.getElementById('customEndInput');
+  const customDateApplyBtn = document.getElementById('customDateApplyBtn');
+  const customDateMsg = document.getElementById('customDateMsg');
+  const stepButtons = document.getElementById('step-buttons');
+  const stepInput = document.getElementById('step-input');
+  const stepResult = document.getElementById('step-result');
+  const goRentBtn = document.getElementById('goRentBtn');
+  const goReturnBtn = document.getElementById('goReturnBtn');
+  const goReportBtn = document.getElementById('goReportBtn');
+  const reportReasonGroup = document.getElementById('reportReasonGroup');
+  const reportReasonRow = document.getElementById('reportReasonRow');
+  const stepInputTitle = document.getElementById('stepInputTitle');
+  const basketBox = document.getElementById('basketBox');
+  const basketDigitsDisplay = document.getElementById('basketDigitsDisplay');
+  const basketConfirmedText = document.getElementById('basketConfirmedText');
+  const basketConfirmedNum = document.getElementById('basketConfirmedNum');
+  const empLookupOpenBtn = document.getElementById('empLookupOpenBtn');
+  const empLookupModal = document.getElementById('empLookupModal');
+  const empLookupInput = document.getElementById('empLookupInput');
+  const empLookupSearchBtn = document.getElementById('empLookupSearchBtn');
+  const empLookupResults = document.getElementById('empLookupResults');
+  const empLookupCancelBtn = document.getElementById('empLookupCancelBtn');
+  const keypad = document.getElementById('keypad');
+  const deptList = document.getElementById('deptList');
+  const deptSearchInput = document.getElementById('deptSearchInput');
+  const deptAdminList = document.getElementById('deptAdminList');
+  const deptAdminCount = document.getElementById('deptAdminCount');
+  const deptAddInput = document.getElementById('deptAddInput');
+  const deptAddBtn = document.getElementById('deptAddBtn');
+  const deptAdminMsg = document.getElementById('deptAdminMsg');
+  const deptSortBtn = document.getElementById('deptSortBtn');
+  const deptUploadMode = document.getElementById('deptUploadMode');
+  const deptUploadBtn = document.getElementById('deptUploadBtn');
+  const deptFileInput = document.getElementById('deptFileInput');
+  const inputBackBtn = document.getElementById('inputBackBtn');
+  const inputNextBtn = document.getElementById('inputNextBtn');
+  const resultIcon = document.getElementById('resultIcon');
+  const resultTitle = document.getElementById('resultTitle');
+  const resultMsg = document.getElementById('resultMsg');
+  const resultDoneBtn = document.getElementById('resultDoneBtn');
+  const tabs = document.querySelectorAll('.tab');
+  const screens = document.querySelectorAll('.screen');
+  const tabbar = document.getElementById('tabbar');
+  const adminBtn = document.getElementById('adminBtn');
+  const pinModal = document.getElementById('pinModal');
+  const pinCard = document.getElementById('pinCard');
+  const pinMsg = document.getElementById('pinMsg');
+  const adminPasswordInput = document.getElementById('adminPasswordInput');
+  const adminLoginBtn = document.getElementById('adminLoginBtn');
+  const actionModal = document.getElementById('actionModal');
+  const actionModalTitle = document.getElementById('actionModalTitle');
+  const actionModalMsg = document.getElementById('actionModalMsg');
+  const actionModalButtons = document.getElementById('actionModalButtons');
+  const stockModal = document.getElementById('stockModal');
+  const stockModalTitle = document.getElementById('stockModalTitle');
+  const stockModalSub = document.getElementById('stockModalSub');
+  const stockModeRow = document.getElementById('stockModeRow');
+  const rangeGroup = document.getElementById('rangeGroup');
+  const listGroup = document.getElementById('listGroup');
+  const stockRangeStartInput = document.getElementById('stockRangeStartInput');
+  const stockRangeEndInput = document.getElementById('stockRangeEndInput');
+  const stockListInput = document.getElementById('stockListInput');
+  const stockReasonInput = document.getElementById('stockReasonInput');
+  const stockModalMsg = document.getElementById('stockModalMsg');
+  const stockCancelBtn = document.getElementById('stockCancelBtn');
+  const stockConfirmBtn = document.getElementById('stockConfirmBtn');
+  const stockInBtn = document.getElementById('stockInBtn');
+  const stockOutBtn = document.getElementById('stockOutBtn');
+  const exportCsvBtn = document.getElementById('exportCsvBtn');
+  const exportRankCsvBtn = document.getElementById('exportRankCsvBtn');
+  const basketEditModal = document.getElementById('basketEditModal');
+  const basketEditTitle = document.getElementById('basketEditTitle');
+  const basketEditBody = document.getElementById('basketEditBody');
+  const basketEditEmpField = document.getElementById('basketEditEmpField');
+  const basketEditEmpInput = document.getElementById('basketEditEmpInput');
+  const basketEditMsg = document.getElementById('basketEditMsg');
+  const basketEditCancelBtn = document.getElementById('basketEditCancelBtn');
+  const basketEditConfirmBtn = document.getElementById('basketEditConfirmBtn');
+  const overdueCount = document.getElementById('overdueCount');
+  const overdueBody = document.getElementById('overdueBody');
+  const stockDisposed = document.getElementById('stockDisposed');
+  const cardTotal = document.getElementById('cardTotal');
+  const cardIn = document.getElementById('cardIn');
+  const cardOut = document.getElementById('cardOut');
+  const cardDisposed = document.getElementById('cardDisposed');
+  const basketListModal = document.getElementById('basketListModal');
+  const basketListTitle = document.getElementById('basketListTitle');
+  const basketListThead = document.getElementById('basketListThead');
+  const basketListBody = document.getElementById('basketListBody');
+  const basketListCloseBtn = document.getElementById('basketListCloseBtn');
+  const pwChangeCurrentInput = document.getElementById('pwChangeCurrentInput');
+  const pwChangeNewInput = document.getElementById('pwChangeNewInput');
+  const pwChangeConfirmInput = document.getElementById('pwChangeConfirmInput');
+  const pwChangeBtn = document.getElementById('pwChangeBtn');
+  const pwChangeMsg = document.getElementById('pwChangeMsg');
+  const resetBasketsBtn = document.getElementById('resetBasketsBtn');
+  const clearStockBtn = document.getElementById('clearStockBtn');
+  const resetLogBtn = document.getElementById('resetLogBtn');
+  const resetStatsBtn = document.getElementById('resetStatsBtn');
+
+  // ==== 관리자 비밀번호 ====
+  // Firebase 계정 로그인 대신 단순 비밀번호 방식으로 변경했습니다.
+  // 아래 값을 직접 원하는 비밀번호로 바꿔서 사용하세요.
+  // 주의: 이 비밀번호는 앱 파일(HTML) 안에 그대로 저장되어 있어서,
+  // 페이지 소스를 볼 줄 아는 사람이라면 누구나 알아낼 수 있습니다.
+  // 여러 사람이 함께 쓰는 공유 기기/태블릿이라면 이 점을 감안해 주세요.
+  const ADMIN_PASSWORD = 'knf2026!';
+  let adminPassword = ADMIN_PASSWORD; // 실제 비교에 쓰이는 값. Firestore에서 불러오면 갱신됨(아래 loadAdminPassword)
+
+  let adminMode = false;
+
+  // 부서/업체 목록: 관리자 모드 > 설정 > 부서/업체 관리에서 수정합니다. (Firestore 'departments' 문서에 저장)
+  // 아래 값은 서버에 목록이 아직 없을 때만 쓰는 기본값입니다.
+  const DEFAULT_DEPARTMENTS = ['ESG협력부','경영지원부','기술개발부','생산부','품질보증부','안전환경부','연료설계부','기타'];
+  let DEPARTMENTS = DEFAULT_DEPARTMENTS.slice();
+  const BASKET_MAX = 4; // 최대 4자리(최대 9999개까지 대응 - 관리자 등록 범위와 여유있게 일치)
+  const OVERDUE_MS = 7 * 24 * 60 * 60 * 1000; // 장기 미반납 기준: 7일(168시간) 초과
+  let flowMode = null;      // '대여' | '반납' | '훼손분실'
+  let inputPhase = 'basket'; // 대여/반납/훼손분실 직접입력 흐름 전용: 'basket' -> 'emp'
+  let activeField = 'emp';  // 'emp' | 'basket'
+  let deptValue = '';
+  let basketDigits = '';
+  let reportReason = '훼손'; // '훼손' | '분실'
+  let lastState = null;
+  let rankPeriod = 'all';
+  let customStartDate = null; // Date at 00:00:00
+  let customEndDate = null;   // Date at 23:59:59
+
+  function defaultState(){
+    const baskets = [];
+    for(let i=1;i<=TOTAL;i++) baskets.push({ id:i, status:'available', dept:null, rentedAt:null });
+    return { baskets, users:{}, log: [], employees:{} };
+  }
+
+  // ==== Firestore 문서 4개로 분리 (재고/직원/이력/실적) ====
+  // 문서 1개에 다 담던 이전 방식과 달리, 카테고리별로 별도 문서 + 별도 보안규칙 적용 가능
+  const FB_COL = fbDb.collection('eumbottari');
+  const FB_BASKETS = FB_COL.doc('baskets');
+  const FB_EMPLOYEES = FB_COL.doc('employees');
+  const FB_LOG = FB_COL.doc('log');
+  const FB_USERSTATS = FB_COL.doc('userStats');
+  const FB_ADMIN = FB_COL.doc('adminConfig');
+  const FB_DEPTS = FB_COL.doc('departments');
+  const LOG_MAX_KEEP = 2000; // 문서 크기 제한(1MB) 대비, 오래된 로그는 자동으로 정리
+
+  // ==== 개인정보 보호: 예전에 저장된 직원 성명 데이터 일회성 정리 ====
+  // 성명 입력 기능을 없애기 전에 이미 Firestore에 저장돼 있던 { 사번: {name:'...'} } 형태의
+  // 기존 데이터에서 성명을 제거하고 { 사번: true } 형태로 정리합니다. (앱 시작 시 1회 실행)
+  async function purgeStoredEmployeeNames(){
+    try{
+      const snap = await FB_EMPLOYEES.get();
+      if(!snap.exists) return;
+      const employees = snap.data().employees || {};
+      let changed = false;
+      const cleaned = {};
+      Object.keys(employees).forEach(id => {
+        if(employees[id] && typeof employees[id] === 'object'){ changed = true; }
+        cleaned[id] = true;
+      });
+      if(changed){
+        await FB_EMPLOYEES.set({ employees: cleaned });
+        console.log('기존에 저장된 직원 성명 데이터를 정리했습니다.');
+      }
+    }catch(e){
+      console.error('직원 성명 데이터 정리 실패', e);
+    }
+  }
+
+  // ==== 관리자 비밀번호 (Firestore에 저장 - 모든 기기에서 동일하게 동기화) ====
+  // 최초 실행 시에는 위 ADMIN_PASSWORD 기본값을 그대로 저장해두고,
+  // 관리자 모드 > 설정 화면에서 변경하면 모든 태블릿에 동일하게 반영됩니다.
+  async function loadAdminPassword(){
+    try{
+      const snap = await FB_ADMIN.get();
+      if(snap.exists && typeof snap.data().password === 'string' && snap.data().password){
+        adminPassword = snap.data().password;
+      } else {
+        adminPassword = ADMIN_PASSWORD;
+        await FB_ADMIN.set({ password: ADMIN_PASSWORD });
+      }
+    }catch(e){
+      console.error('관리자 비밀번호 불러오기 실패', e);
+      // 실패 시 코드에 적힌 기본값(ADMIN_PASSWORD)으로 계속 동작
+    }
+  }
+  async function saveAdminPassword(newPassword){
+    try{
+      await FB_ADMIN.set({ password: newPassword });
+      adminPassword = newPassword;
+      return true;
+    }catch(e){
+      console.error('관리자 비밀번호 저장 실패', e);
+      return false;
+    }
+  }
+
+  async function loadState(){
+    try{
+      const [basketsSnap, employeesSnap, logSnap, usersSnap] = await Promise.all([
+        FB_BASKETS.get(), FB_EMPLOYEES.get(), FB_LOG.get(), FB_USERSTATS.get()
+      ]);
+      if(!basketsSnap.exists){
+        // 최초 실행: 기본 데이터 생성 후 4개 문서로 저장
+        const init = defaultState();
+        await saveState(init);
+        return init;
+      }
+      return {
+        baskets: basketsSnap.data().baskets || [],
+        employees: employeesSnap.exists ? (employeesSnap.data().employees || {}) : {},
+        log: logSnap.exists ? (logSnap.data().log || []) : [],
+        users: usersSnap.exists ? (usersSnap.data().users || {}) : {}
+      };
+    }catch(e){
+      console.error('불러오기 실패(Firebase)', e);
+      return defaultState();
+    }
+  }
+
+  async function saveState(state){
+    try{
+      const batch = fbDb.batch();
+      batch.set(FB_BASKETS, { baskets: state.baskets });
+      batch.set(FB_EMPLOYEES, { employees: state.employees });
+      batch.set(FB_LOG, { log: state.log.slice(0, LOG_MAX_KEEP) });
+      batch.set(FB_USERSTATS, { users: state.users });
+      await batch.commit();
+      return true;
+    }catch(e){
+      console.error('저장 실패(Firebase)', e);
+      const code = e && e.code ? e.code : '';
+      let detail = '네트워크 연결을 확인해 주세요.';
+      if(code === 'permission-denied'){
+        detail = '서버 저장 권한이 거부되었습니다. (Firestore 보안 규칙을 확인해 주세요)';
+      } else if(code === 'unavailable'){
+        detail = '서버에 연결할 수 없습니다. 네트워크(와이파이) 연결을 확인해 주세요.';
+      } else if(code){
+        detail = `오류 코드: ${code}. 네트워크 연결을 확인한 뒤 다시 시도해 주세요.`;
+      }
+      showAlert('저장 실패', `서버에 저장하지 못했습니다. ${detail} 방금 하신 처리는 반영되지 않았으니 다시 시도해 주세요.`);
+      return false;
+    }
+  }
+
+  // 실시간 동기화: 4개 문서 중 하나라도 바뀌면 자동으로 화면 갱신
+  const fbLatest = { baskets: null, employees: null, log: null, users: null };
+  function tryRenderFromLatest(){
+    if(fbLatest.baskets && fbLatest.employees && fbLatest.log && fbLatest.users){
+      render({ baskets: fbLatest.baskets, employees: fbLatest.employees, log: fbLatest.log, users: fbLatest.users });
+    }
+  }
+  FB_BASKETS.onSnapshot((snap) => {
+    if(!snap.exists) return;
+    fbLatest.baskets = snap.data().baskets || [];
+    tryRenderFromLatest();
+  }, (err) => console.error('실시간 동기화 오류(baskets)', err));
+  FB_EMPLOYEES.onSnapshot((snap) => {
+    fbLatest.employees = snap.exists ? (snap.data().employees || {}) : {};
+    tryRenderFromLatest();
+  }, (err) => console.error('실시간 동기화 오류(employees)', err));
+  FB_LOG.onSnapshot((snap) => {
+    fbLatest.log = snap.exists ? (snap.data().log || []) : [];
+    tryRenderFromLatest();
+  }, (err) => console.error('실시간 동기화 오류(log)', err));
+  FB_USERSTATS.onSnapshot((snap) => {
+    fbLatest.users = snap.exists ? (snap.data().users || {}) : {};
+    tryRenderFromLatest();
+  }, (err) => console.error('실시간 동기화 오류(userStats)', err));
+  // 부서/업체 목록 실시간 동기화 (관리자가 바꾸면 모든 기기에 반영)
+  FB_DEPTS.onSnapshot((snap) => {
+    const list = snap.exists ? snap.data().list : null;
+    const clean = Array.isArray(list) ? list.filter(x => typeof x === 'string' && x.trim()) : [];
+    applyDepartments(clean.length ? clean : DEFAULT_DEPARTMENTS.slice());
+  }, (err) => console.error('실시간 동기화 오류(departments)', err));
+  function fmtTime(d){ return d.toLocaleTimeString('ko-KR', { hour12:false }); }
+  function fmtRentedAt(iso){
+    if(!iso) return '-';
+    const dateStr = iso.slice(0,10);
+    const timeStr = new Date(iso).toLocaleTimeString('ko-KR', { hour12:false });
+    return `${dateStr} ${timeStr}`;
+  }
+  function maskId(id){
+    return id; // 부서/업체명
+  }
+  function empLabel(state, empId){
+    // 개인정보 보호를 위해 개인 식별 정보 없이 부서/업체명만 표시합니다.
+    if(!empId) return '-';
+    return maskId(empId);
+  }
+
+  function padBasket(n){ return String(n).padStart(4,'0'); }
+  function isDisposeAction(action){ return action === '폐기/분실' || action === '출고'; }
+  function classifyLogRow(l){
+    if(l.type === 'adjust'){
+      if(isDisposeAction(l.action)) return { cls:'dispose', label:'폐기/분실' };
+      if(l.action === '수동변경') return { cls: l.manualTo === 'rented' ? 'out' : 'in', label:'수동변경' };
+      return { cls:'in', label:'입고' };
+    }
+    return l.action === '대여' ? { cls:'out', label:'출고' } : { cls:'in', label:'입고' };
+  }
+
+  function renderFields(){
+    basketDigitsDisplay.innerHTML = basketDigits.length
+      ? basketDigits + '<span class="cursor">|</span>'
+      : '입력하세요<span class="cursor">|</span>';
+  }
+
+  function updateFieldFocus(){
+    basketBox.classList.toggle('focused', activeField === 'basket');
+    // 부서/업체 선택 단계에서는 숫자 키패드 대신 부서/업체 버튼을 보여줍니다.
+    const deptMode = activeField === 'emp';
+    keypad.style.display = deptMode ? 'none' : '';
+    deptSearchInput.style.display = deptMode ? '' : 'none';
+    if(deptMode && !wasDeptMode){
+      // 부서/업체 입력 단계 진입: 검색창에 커서를 두고 전체 목록을 먼저 보여줌
+      deptListOpen = !deptValue;
+      deptActiveIdx = -1;
+      renderDeptButtons();
+      setTimeout(() => { try{ deptSearchInput.focus(); }catch(e){} }, 50);
+    } else if(!deptMode){
+      deptListOpen = false;
+      renderDeptButtons();
+    }
+    wasDeptMode = deptMode;
+  }
+
+  basketBox.addEventListener('click', () => { activeField = 'basket'; updateFieldFocus(); });
+
+  // 키패드 구성 (장바구니 번호 입력 전용)
+  const keys = ['1','2','3','4','5','6','7','8','9','지움','0','←'];
+  keys.forEach(k => {
+    const el = document.createElement('div');
+    el.className = 'key' + (k === '지움' ? ' clear' : '');
+    el.textContent = k;
+    el.addEventListener('click', () => {
+      if(k === '지움'){
+        basketDigits = '';
+      } else if(k === '←'){
+        basketDigits = basketDigits.slice(0,-1);
+      } else {
+        if(basketDigits.length < BASKET_MAX) basketDigits += k;
+      }
+      renderFields();
+    });
+    keypad.appendChild(el);
+  });
+
+  // ---- 부서/업체 선택: 검색 + 버튼 ----
+  const CHOSEONG = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+  function toChoseong(str){
+    return Array.from(str).map(ch => {
+      const c = ch.charCodeAt(0);
+      return (c >= 0xAC00 && c <= 0xD7A3) ? CHOSEONG[Math.floor((c - 0xAC00) / 588)] : ch;
+    }).join('');
+  }
+  // 검색어가 부서/업체명에 포함되거나, 초성만 입력했을 때 초성이 일치하면 표시
+  function deptMatches(name, query){
+    const q = query.trim().toLowerCase();
+    if(!q) return true;
+    if(name.toLowerCase().includes(q)) return true;
+    if(/^[ㄱ-ㅎ]+$/.test(q)) return toChoseong(name).includes(q);
+    return false;
+  }
+  function escHtml(v){
+    return String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  // ---- 부서/업체 입력: 초성/키워드 검색 + 자동완성 드롭다운 ----
+  let deptListOpen = false;
+  let deptActiveIdx = -1;
+  let deptShown = [];
+  let wasDeptMode = false;
+
+  // 일치도 순 정렬: 완전일치 > 앞부분 일치(글자/초성) > 포함 > 초성 포함
+  function rankDepts(q){
+    const query = q.trim().toLowerCase();
+    if(!query) return DEPARTMENTS.slice();
+    const isCho = /^[ㄱ-ㅎ]+$/.test(query);
+    const scored = [];
+    DEPARTMENTS.forEach(d => {
+      if(!deptMatches(d, q)) return;
+      const n = d.toLowerCase();
+      let score = 3;
+      if(n === query) score = 0;
+      else if(n.startsWith(query) || (isCho && toChoseong(d).startsWith(query))) score = 1;
+      else if(n.includes(query)) score = 2;
+      scored.push([score, d]);
+    });
+    scored.sort((x, y) => x[0] - y[0]);
+    return scored.map(x => x[1]);
+  }
+  function highlightDept(name, q){
+    const query = q.trim().toLowerCase();
+    const i = query ? name.toLowerCase().indexOf(query) : -1;
+    if(i < 0) return escHtml(name);
+    return escHtml(name.slice(0, i)) + '<b>' + escHtml(name.slice(i, i + query.length)) + '</b>' + escHtml(name.slice(i + query.length));
+  }
+  function renderDeptButtons(){
+    deptList.innerHTML = '';
+    if(!deptListOpen){
+      deptList.style.display = 'none';
+      return;
+    }
+    deptList.style.display = '';
+    const q = deptSearchInput.value;
+    deptShown = rankDepts(q);
+    if(deptShown.length === 0){
+      deptActiveIdx = -1;
+      const e = document.createElement('div');
+      e.className = 'deptempty';
+      e.textContent = '일치하는 부서/업체가 없습니다';
+      deptList.appendChild(e);
+      return;
+    }
+    if(deptActiveIdx >= deptShown.length) deptActiveIdx = deptShown.length - 1;
+    deptShown.forEach((d, i) => {
+      const it = document.createElement('div');
+      it.className = 'deptitem' + (i === deptActiveIdx ? ' active' : '');
+      it.innerHTML = highlightDept(d, q);
+      it.addEventListener('click', () => pickDept(d));
+      deptList.appendChild(it);
+      if(i === deptActiveIdx && it.scrollIntoView){ try{ it.scrollIntoView({ block:'nearest' }); }catch(e){} }
+    });
+  }
+  function pickDept(d){
+    deptValue = d;
+    deptSearchInput.value = d;
+    deptListOpen = false;
+    deptActiveIdx = -1;
+    renderFields();
+    renderDeptButtons();
+  }
+  deptSearchInput.addEventListener('input', () => {
+    const v = deptSearchInput.value.trim().toLowerCase();
+    const exact = DEPARTMENTS.find(d => d.toLowerCase() === v);
+    deptValue = exact || '';          // 글자를 고치면 선택이 풀리고, 정확히 일치하면 바로 선택됨
+    deptListOpen = true;
+    deptActiveIdx = v ? 0 : -1;       // 입력 중에는 가장 일치하는 부서/업체가 미리 선택(자동완성)
+    renderFields();
+    renderDeptButtons();
+  });
+  deptSearchInput.addEventListener('focus', () => {
+    if(!deptListOpen){ deptListOpen = true; deptActiveIdx = -1; renderDeptButtons(); }
+  });
+  deptSearchInput.addEventListener('keydown', (e) => {
+    if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+      e.preventDefault();
+      if(!deptListOpen){ deptListOpen = true; renderDeptButtons(); }
+      if(deptShown.length){
+        deptActiveIdx = e.key === 'ArrowDown'
+          ? Math.min(deptShown.length - 1, deptActiveIdx + 1)
+          : Math.max(0, deptActiveIdx - 1);
+        renderDeptButtons();
+      }
+    } else if(e.key === 'Enter'){
+      e.preventDefault();
+      if(deptListOpen && deptShown.length && deptActiveIdx >= 0){
+        pickDept(deptShown[deptActiveIdx]);
+      } else if(deptListOpen && deptShown.length === 1){
+        pickDept(deptShown[0]);
+      } else if(deptValue){
+        inputNextBtn.click();          // 선택된 상태에서 한 번 더 Enter = 다음
+      }
+    } else if(e.key === 'Escape'){
+      deptListOpen = false;
+      renderDeptButtons();
+    }
+  });
+  document.addEventListener('click', (e) => {
+    if(!deptListOpen) return;
+    const t = e.target;
+    const inside = t && ((t.closest && t.closest('#deptList')) || t.id === 'deptSearchInput');
+    if(!inside){ deptListOpen = false; renderDeptButtons(); }
+  });
+
+  function applyDepartments(list){
+    DEPARTMENTS = list;
+    renderDeptButtons();
+    const dl = document.getElementById('deptDatalist');
+    if(dl) dl.innerHTML = DEPARTMENTS.map(d => '<option value="' + escHtml(d) + '"></option>').join('');
+    renderDeptAdminList();
+  }
+
+  // ---- 관리자: 부서/업체 관리 (추가 / 수정 / 삭제 / 정렬) ----
+  let editingDept = null;
+  const DEPT_NAME_MAX = 20;
+  const DEPT_LIST_MAX = 200;
+
+  function renderDeptAdminList(){
+    deptAdminCount.textContent = `${DEPARTMENTS.length}개`;
+    deptAdminList.innerHTML = DEPARTMENTS.map(d => {
+      const e = escHtml(d);
+      if(d === editingDept){
+        return `<div class="deptrow" data-name="${e}"><input type="text" maxlength="${DEPT_NAME_MAX}" value="${e}" /><span class="da"><button data-act="save">저장</button><button data-act="cancel">취소</button></span></div>`;
+      }
+      return `<div class="deptrow" data-name="${e}"><span class="dn">${e}</span><span class="da"><button data-act="edit">수정</button><button class="del" data-act="del">삭제</button></span></div>`;
+    }).join('');
+  }
+
+  function deptNameProblem(name){
+    if(!name) return '부서/업체명을 입력해 주세요.';
+    if(name.length > DEPT_NAME_MAX) return `부서/업체명은 ${DEPT_NAME_MAX}자 이내로 입력해 주세요.`;
+    if(/[.\/<>"'&]/.test(name)) return '부서/업체명에는 . / < > " \' & 문자를 쓸 수 없습니다.';
+    return '';
+  }
+  function checkDeptName(name, ignoreName){
+    const p = deptNameProblem(name);
+    if(p) return p;
+    if(DEPARTMENTS.some(d => d !== ignoreName && d.toLowerCase() === name.toLowerCase())) return '이미 있는 부서/업체명입니다.';
+    return '';
+  }
+
+  async function saveDepartments(list){
+    try{
+      await FB_DEPTS.set({ list });
+      return true;
+    }catch(e){
+      console.error('부서/업체 목록 저장 실패', e);
+      showAlert('저장 실패', '부서/업체 목록을 저장하지 못했습니다. 네트워크 연결과 Firestore 규칙(departments 문서 허용)을 확인해 주세요.');
+      return false;
+    }
+  }
+
+  deptAddBtn.addEventListener('click', async () => {
+    const name = deptAddInput.value.trim();
+    const err = checkDeptName(name, null);
+    if(err){ deptAdminMsg.textContent = err; return; }
+    if(DEPARTMENTS.length >= DEPT_LIST_MAX){ deptAdminMsg.textContent = `부서/업체는 최대 ${DEPT_LIST_MAX}개까지 등록할 수 있습니다.`; return; }
+    deptAdminMsg.textContent = '';
+    const list = DEPARTMENTS.concat(name);
+    if(await saveDepartments(list)){
+      deptAddInput.value = '';
+      applyDepartments(list);
+    }
+  });
+  deptAddInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') deptAddBtn.click(); });
+
+  deptSortBtn.addEventListener('click', async () => {
+    const list = DEPARTMENTS.slice().sort((a,b) => a.localeCompare(b, 'ko'));
+    if(await saveDepartments(list)) applyDepartments(list);
+  });
+
+  // ---- 엑셀/CSV 업로드 ----
+  function loadXlsxLib(){
+    return new Promise((resolve, reject) => {
+      if(window.XLSX) return resolve(window.XLSX);
+      const sc = document.createElement('script');
+      sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      sc.onload = () => window.XLSX ? resolve(window.XLSX) : reject(new Error('XLSX 없음'));
+      sc.onerror = () => reject(new Error('엑셀 처리 도구를 불러오지 못했습니다. 인터넷 연결을 확인하시거나, 엑셀을 CSV로 저장해서 올려 주세요.'));
+      document.head.appendChild(sc);
+    });
+  }
+  function decodeText(buf){
+    // 엑셀의 "CSV(쉼표로 분리)"는 EUC-KR, "CSV UTF-8"은 UTF-8 이므로 둘 다 처리
+    try{ return new TextDecoder('utf-8', { fatal:true }).decode(buf); }
+    catch(e){ return new TextDecoder('euc-kr').decode(buf); }
+  }
+  async function readDeptFile(file){
+    const fname = (file.name || '').toLowerCase();
+    const buf = await file.arrayBuffer();
+    let cells;
+    if(/\.(csv|txt)$/.test(fname)){
+      cells = decodeText(buf).replace(/^\uFEFF/, '').split(/\r?\n/).map(line => line.split(/[,\t]/)[0].replace(/^"|"$/g, ''));
+    } else if(/\.(xlsx|xls)$/.test(fname)){
+      const XLSX = await loadXlsxLib();
+      const wb = XLSX.read(buf, { type:'array' });
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, defval:'' });
+      cells = rows.map(r => r[0]);
+    } else {
+      throw new Error('지원하지 않는 파일 형식입니다. (.xlsx, .xls, .csv, .txt)');
+    }
+    const names = cells.map(c => String(c == null ? '' : c).trim()).filter(Boolean);
+    if(names.length && ['부서','부서명','부서 명','부서/업체','부서/업체명','업체','업체명','department'].includes(names[0].toLowerCase())) names.shift();
+    return names;
+  }
+
+  deptUploadBtn.addEventListener('click', () => {
+    deptFileInput.value = '';
+    deptFileInput.click();
+  });
+  deptFileInput.addEventListener('change', async () => {
+    const file = deptFileInput.files && deptFileInput.files[0];
+    if(!file) return;
+    deptAdminMsg.textContent = '';
+    let names;
+    try{
+      names = await readDeptFile(file);
+    }catch(e){
+      console.error('부서/업체 파일 읽기 실패', e);
+      showAlert('업로드 실패', (e && e.message) ? e.message : '파일을 읽지 못했습니다.');
+      return;
+    }
+    const valid = [], invalid = [], seen = new Set();
+    names.forEach(n => {
+      if(deptNameProblem(n)){ invalid.push(n); return; }
+      const k = n.toLowerCase();
+      if(seen.has(k)) return;
+      seen.add(k);
+      valid.push(n);
+    });
+    if(valid.length === 0){
+      showAlert('업로드 실패', '읽을 수 있는 부서/업체명이 없습니다. 첫 번째 열에 부서/업체명이 한 줄씩 적혀 있는지 확인해 주세요.');
+      return;
+    }
+    let finalList, summary;
+    if(deptUploadMode.value === 'replace'){
+      finalList = valid;
+      const state = lastState || await loadState();
+      const keep = new Set(finalList.map(d => d.toLowerCase()));
+      const lost = state.baskets.filter(b => b.status === 'rented' && b.dept && !keep.has(String(b.dept).toLowerCase())).map(b => b.dept);
+      if(lost.length){
+        showAlert('교체할 수 없음', `현재 대여 중인 장바구니가 있는 부서/업체(${Array.from(new Set(lost)).join(', ')})가 새 목록에 없습니다. 해당 부서/업체를 파일에 포함하거나, 반납된 뒤 다시 시도해 주세요.`);
+        return;
+      }
+      summary = `부서/업체 목록을 업로드한 ${valid.length}개로 전체 교체합니다. (현재 ${DEPARTMENTS.length}개)`;
+    } else {
+      const exist = new Set(DEPARTMENTS.map(d => d.toLowerCase()));
+      const added = valid.filter(n => !exist.has(n.toLowerCase()));
+      if(added.length === 0){
+        showAlert('추가할 부서/업체 없음', '파일의 부서/업체가 모두 이미 등록되어 있습니다.');
+        return;
+      }
+      finalList = DEPARTMENTS.concat(added);
+      summary = `새 부서/업체 ${added.length}개를 추가합니다. (이미 있는 ${valid.length - added.length}개는 제외)`;
+    }
+    if(finalList.length > DEPT_LIST_MAX){
+      showAlert('업로드 실패', `부서/업체는 최대 ${DEPT_LIST_MAX}개까지 등록할 수 있습니다. (적용 시 ${finalList.length}개)`);
+      return;
+    }
+    if(invalid.length){
+      summary += ` 형식이 맞지 않아 제외되는 항목이 ${invalid.length}개 있습니다. (${invalid.slice(0,3).join(', ')}${invalid.length > 3 ? ' 등' : ''})`;
+    }
+    showYesNo(
+      '부서/업체 목록 업로드',
+      summary + ' 계속하시겠습니까?',
+      '예, 적용합니다', '아니오',
+      async () => {
+        if(await saveDepartments(finalList)){
+          applyDepartments(finalList);
+          showAlert('업로드 완료', `부서/업체 목록이 ${finalList.length}개로 저장되었습니다.`);
+        }
+      },
+      () => {}
+    );
+  });
+
+  async function renameDept(oldName, newName){
+    // 기존 대여 중 표시·이력·이용실적의 부서/업체명도 함께 바꿔 집계가 끊기지 않게 합니다.
+    const state = await loadState();
+    state.baskets.forEach(b => { if(b.dept === oldName) b.dept = newName; });
+    state.log.forEach(l => { if(l.dept === oldName) l.dept = newName; });
+    if(state.users[oldName]){
+      const o = state.users[oldName];
+      const t = state.users[newName] || { rentCount:0, returnCount:0 };
+      t.rentCount = (t.rentCount || 0) + (o.rentCount || 0);
+      t.returnCount = (t.returnCount || 0) + (o.returnCount || 0);
+      state.users[newName] = t;
+      delete state.users[oldName];
+    }
+    if(!(await saveState(state))) return;
+    const list = DEPARTMENTS.map(d => d === oldName ? newName : d);
+    if(!(await saveDepartments(list))) return;
+    editingDept = null;
+    applyDepartments(list);
+    render(state);
+  }
+
+  deptAdminList.addEventListener('click', async (e) => {
+    const btn = e.target.closest ? e.target.closest('button') : null;
+    if(!btn) return;
+    const row = btn.closest('.deptrow');
+    if(!row) return;
+    const name = row.dataset.name;
+    const act = btn.dataset.act;
+    deptAdminMsg.textContent = '';
+    if(act === 'edit'){
+      editingDept = name;
+      renderDeptAdminList();
+    } else if(act === 'cancel'){
+      editingDept = null;
+      renderDeptAdminList();
+    } else if(act === 'save'){
+      const input = row.querySelector('input');
+      const newName = input ? input.value.trim() : '';
+      if(newName === name){ editingDept = null; renderDeptAdminList(); return; }
+      const err = checkDeptName(newName, name);
+      if(err){ deptAdminMsg.textContent = err; return; }
+      showYesNo(
+        '부서/업체명 수정',
+        `"${name}" → "${newName}"(으)로 변경합니다. 기존 이력과 이용실적의 부서/업체명도 함께 바뀝니다. 계속하시겠습니까?`,
+        '예, 변경합니다', '아니오',
+        () => { renameDept(name, newName); },
+        () => {}
+      );
+    } else if(act === 'del'){
+      if(DEPARTMENTS.length <= 1){ deptAdminMsg.textContent = '부서/업체는 최소 1개가 필요합니다.'; return; }
+      const state = lastState || await loadState();
+      if(state.baskets.some(b => b.status === 'rented' && b.dept === name)){
+        showAlert('삭제할 수 없음', `"${name}"은(는) 현재 대여 중인 장바구니가 있어 삭제할 수 없습니다. 반납된 뒤에 삭제해 주세요.`);
+        return;
+      }
+      showYesNo(
+        '부서/업체 삭제',
+        `"${name}"을(를) 목록에서 삭제합니다. 기존 이력과 이용실적은 그대로 남습니다. 계속하시겠습니까?`,
+        '예, 삭제합니다', '아니오',
+        async () => {
+          const list = DEPARTMENTS.filter(d => d !== name);
+          if(await saveDepartments(list)) applyDepartments(list);
+        },
+        () => {}
+      );
+    }
+  });
+
+  function showHomeStep(name){
+    document.querySelectorAll('.homestep').forEach(s => s.classList.remove('active'));
+    document.getElementById('step-' + name).classList.add('active');
+  }
+
+  function resetInputFields(){
+    deptValue = ''; basketDigits = ''; activeField = 'emp'; inputPhase = 'basket';
+    deptSearchInput.value = '';
+    renderDeptButtons();
+    basketBox.style.display = 'none';
+    basketConfirmedText.style.display = 'none';
+    empLookupOpenBtn.style.display = 'none';
+    updateFieldFocus(); renderFields();
+  }
+
+  // 장바구니 번호 입력 완료 후 부서/업체 선택 단계로 넘어갈 때: 입력창 대신 확정된 번호를 텍스트로 표시
+  function confirmBasketNumber(basketNum){
+    basketBox.style.display = 'none';
+    basketConfirmedNum.textContent = padBasket(basketNum) + '번';
+    basketConfirmedText.style.display = '';
+  }
+
+  function render(state){
+    // 재고현황 요약
+    const total = state.baskets.length;
+    const inStock = state.baskets.filter(b => b.status === 'available').length;
+    const outStock = total - inStock;
+    stockTotal.textContent = total;
+    stockIn.textContent = inStock;
+    stockOut.textContent = outStock;
+
+    const disposedCount = state.log
+      .filter(l => l.type === 'adjust' && isDisposeAction(l.action))
+      .reduce((sum, l) => sum + (l.qty || 0), 0);
+    stockDisposed.textContent = disposedCount;
+
+    // 장기 미반납 (7일 초과 대여중)
+    const nowForOverdue = new Date();
+    const overdueList = state.baskets
+      .filter(b => b.status === 'rented' && b.rentedAt && (nowForOverdue - new Date(b.rentedAt)) > OVERDUE_MS)
+      .sort((a,b) => new Date(a.rentedAt) - new Date(b.rentedAt));
+    overdueCount.textContent = `${overdueList.length}건`;
+    overdueCount.style.color = overdueList.length > 0 ? 'var(--rent)' : 'var(--sub)';
+    if(overdueList.length === 0){
+      overdueBody.innerHTML = `<tr><td colspan="4" class="invempty">7일 초과 미반납 장바구니가 없습니다</td></tr>`;
+    } else {
+      overdueBody.innerHTML = overdueList.map(b => {
+        const elapsedMs = nowForOverdue - new Date(b.rentedAt);
+        const days = Math.floor(elapsedMs / 86400000);
+        const hours = Math.floor((elapsedMs % 86400000) / 3600000);
+        return `<tr>
+          <td><span class="basket-link" data-basketid="${b.id}">${padBasket(b.id)}번</span></td>
+          <td>${empLabel(state, b.dept)}</td>
+          <td>${fmtRentedAt(b.rentedAt)}</td>
+          <td style="color:var(--rent);font-weight:700;">${days}일 ${hours}시간</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // 입출고 이력 (관리자) - DB 컬럼 형태로 분리 표시 (마일리지 차감은 재고와 무관하므로 제외)
+    const invLog = state.log.filter(l => l.type !== 'mileageRedeem');
+    if(invLog.length === 0){
+      invBody.innerHTML = `<tr><td colspan="8" class="invempty">입출고 이력이 없습니다</td></tr>`;
+    } else {
+      invBody.innerHTML = invLog.slice(0,30).map(l => {
+        const isAdjust = l.type === 'adjust';
+        const { cls, label } = classifyLogRow(l);
+        const dateStr = l.at ? l.at.slice(0,10) : '-';
+        const empCell = l.dept ? empLabel(state, l.dept) : '-';
+        const basketCell = l.basketId ? `<span class="basket-link" data-basketid="${l.basketId}">${padBasket(l.basketId)}번</span>` : (l.basketRange || '-');
+        const reasonCell = isAdjust ? l.reason : '-';
+        const qtyCell = l.qty != null ? l.qty : 1;
+        return `<tr>
+          <td>${dateStr}</td>
+          <td>${l.time}</td>
+          <td><span class="iotag ${cls}">${label}</span></td>
+          <td>${empCell}</td>
+          <td>${basketCell}</td>
+          <td>${reasonCell}</td>
+          <td>${qtyCell}</td>
+          <td>${l.remain != null ? l.remain : '-'}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // 장바구니 번호로 이력 조회 (관리자)
+    if(lookupBasketNum == null){
+      lookupResultSection.style.display = 'none';
+    } else {
+      lookupResultSection.style.display = '';
+      const lb = state.baskets.find(b => b.id === lookupBasketNum);
+      if(!lb){
+        lookupBasketStatus.innerHTML = `○ 현재 상태 : 등록되지 않은 번호입니다`;
+      } else if(lb.status === 'rented'){
+        lookupBasketStatus.innerHTML = `○ 현재 상태 : <strong style="color:var(--rent);">대여중</strong> (${empLabel(state, lb.dept)}, 대여일시 ${fmtRentedAt(lb.rentedAt)})`;
+      } else {
+        lookupBasketStatus.innerHTML = `○ 현재 상태 : <strong style="color:var(--ok);">대여가능</strong>`;
+      }
+      lookupResultTitle.textContent = `○ ${padBasket(lookupBasketNum)}번 이력`;
+      const basketHistory = state.log.filter(l => l.type !== 'mileageRedeem' && (
+        Number(l.basketId) === lookupBasketNum ||
+        (l.basketRange && String(l.basketRange).includes(String(lookupBasketNum)))
+      ));
+      if(basketHistory.length === 0){
+        lookupBasketBody.innerHTML = `<tr><td colspan="7" class="invempty">${padBasket(lookupBasketNum)}번 장바구니의 이력이 없습니다</td></tr>`;
+      } else {
+        lookupBasketBody.innerHTML = basketHistory.map(l => {
+          const isAdjust = l.type === 'adjust';
+          const { cls, label } = classifyLogRow(l);
+          const dateStr = l.at ? l.at.slice(0,10) : '-';
+          const empCell = l.dept ? empLabel(state, l.dept) : '-';
+          const reasonCell = isAdjust ? l.reason : '-';
+          const qtyCell = l.qty != null ? l.qty : 1;
+          return `<tr>
+            <td><span class="iotag ${cls}">${label}</span></td>
+            <td>${dateStr}</td>
+            <td>${l.time}</td>
+            <td>${empCell}</td>
+            <td>${reasonCell}</td>
+            <td>${qtyCell}</td>
+            <td>${l.remain != null ? l.remain : '-'}</td>
+          </tr>`;
+        }).join('');
+      }
+    }
+
+    // 대여현황 화면 (사용자 모드) - 부서/업체 조회 후에만 표시
+    if(!userLookupEmpId){
+      userMileageSection.style.display = 'none';
+    } else {
+      userMileageSection.style.display = '';
+
+      // 조회 기간(시작일~종료일) 내 로그만 대상으로 함 - "대여 중" 현황은 기간과 무관하게 현재 상태 그대로
+      const withinDateRange = (l) => {
+        if(!l.at || !userDateStart || !userDateEnd) return true;
+        const d = new Date(l.at);
+        return d >= userDateStart && d <= userDateEnd;
+      };
+
+      // 마일리지: 적립만 존재 (차감 개념 없음) - 조회 기간 내 대여/반납으로 적립된 점수 합계
+      const mileageLog = state.log.filter(l => l.type !== 'adjust' && l.type !== 'mileageRedeem' && l.dept === userLookupEmpId && withinDateRange(l));
+      const earned = mileageLog.reduce((sum, l) => sum + (l.points != null ? l.points : 0), 0);
+      userMileageEarned.textContent = earned;
+
+      // 현재 대여 중인 장바구니 (기간 필터와 무관한 실시간 상태)
+      const rentingBaskets = state.baskets
+        .filter(b => b.status === 'rented' && b.dept === userLookupEmpId)
+        .sort((a,b) => a.id - b.id);
+      userRentingList.textContent = rentingBaskets.length === 0
+        ? '없음'
+        : rentingBaskets.map(b => padBasket(b.id) + '번').join(', ');
+
+      // 대여 내역 (대여/반납/훼손·분실 통합 리스트, 선택한 부서/업체 + 조회 기간 결과만)
+      const userVisibleLog = state.log.filter(l =>
+        (l.type !== 'adjust' || isDisposeAction(l.action)) && l.type !== 'mileageRedeem' &&
+        l.dept === userLookupEmpId && withinDateRange(l)
+      );
+      if(userVisibleLog.length === 0){
+        userInvBody.innerHTML = `<tr><td colspan="5" class="invempty">해당 부서/업체의 대여 내역이 없습니다</td></tr>`;
+      } else {
+        userInvBody.innerHTML = userVisibleLog.map(l => {
+          const isDispose = l.type === 'adjust';
+          const cls = isDispose ? 'dispose' : (l.action === '대여' ? 'out' : 'in');
+          const label = isDispose ? '훼손/분실' : l.action;
+          const dateStr = l.at ? l.at.slice(0,10) : '-';
+          const timeStr = l.at ? new Date(l.at).toLocaleTimeString('ko-KR', { hour12:false, hour:'2-digit', minute:'2-digit' }) : (l.time || '-').slice(0,5);
+          const basketCell = l.basketId ? padBasket(l.basketId) + '번' : (l.basketRange || '-');
+          const pts = l.points != null ? l.points : null;
+          const ptsCell = pts == null ? '-' : (pts > 0 ? `+${pts}점` : `${pts}점`);
+          return `<tr>
+            <td><span class="iotag ${cls}">${label}</span></td>
+            <td>${dateStr}</td>
+            <td>${timeStr}</td>
+            <td>${basketCell}</td>
+            <td>${ptsCell}</td>
+          </tr>`;
+        }).join('');
+      }
+    }
+
+    lastState = state;
+    renderRankTable(state);
+  }
+
+  // ---- 대여현황 화면: 부서/업체로 이력·마일리지 조회 ----
+  function doUserLookup(){
+    const empId = userLookupEmpInput.value.trim();
+    if(!isValidDept(empId)){
+      userLookupMsg.textContent = '부서/업체를 선택해 주세요.';
+      return;
+    }
+    const startVal = userDateStartInput.value;
+    const endVal = userDateEndInput.value;
+    if(!startVal || !endVal){
+      userLookupMsg.textContent = '조회 기간(시작일/종료일)을 입력해 주세요.';
+      return;
+    }
+    const start = new Date(startVal + 'T00:00:00');
+    const end = new Date(endVal + 'T23:59:59');
+    if(start > end){
+      userLookupMsg.textContent = '시작일은 종료일보다 이후일 수 없습니다.';
+      return;
+    }
+    userLookupEmpId = empId;
+    userDateStart = start;
+    userDateEnd = end;
+    userLookupMsg.textContent = '';
+    if(lastState) render(lastState);
+  }
+  userLookupBtn.addEventListener('click', doUserLookup);
+  userLookupEmpInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') doUserLookup();
+  });
+  userLookupResetBtn.addEventListener('click', () => {
+    userLookupEmpId = null;
+    userDateStart = null;
+    userDateEnd = null;
+    userLookupEmpInput.value = '';
+    userDateRangeDefaults();
+    userLookupMsg.textContent = '';
+    if(lastState) render(lastState);
+  });
+
+  function doLookupBasket(){
+    const raw = lookupBasketInput.value.trim();
+    lookupBasketMsg.textContent = '';
+    if(!raw || Number.isNaN(Number(raw)) || Number(raw) < 1){
+      lookupBasketMsg.textContent = '장바구니 번호를 입력해 주세요.';
+      lookupBasketNum = null;
+      if(lastState) render(lastState);
+      return;
+    }
+    lookupBasketNum = Number(raw);
+    if(lastState) render(lastState);
+  }
+  lookupBasketBtn.addEventListener('click', doLookupBasket);
+  lookupBasketInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') doLookupBasket();
+  });
+  lookupBasketInput.addEventListener('input', () => {
+    lookupBasketInput.value = lookupBasketInput.value.replace(/\D/g,'');
+  });
+  lookupBasketResetBtn.addEventListener('click', () => {
+    lookupBasketNum = null;
+    lookupBasketInput.value = '';
+    lookupBasketMsg.textContent = '';
+    if(lastState) render(lastState);
+  });
+
+  // 관리자 모드 어디서든 장바구니 번호를 클릭하면 "이력조회" 탭으로 이동해 바로 조회
+  function goToBasketLookup(basketNum){
+    if(typeof closeBasketListModal === 'function') closeBasketListModal();
+    lookupBasketNum = basketNum;
+    lookupBasketInput.value = basketNum;
+    lookupBasketMsg.textContent = '';
+    tabs.forEach(x => x.classList.remove('active'));
+    screens.forEach(s => s.classList.remove('active'));
+    document.querySelector('.tab[data-screen="lookup"]').classList.add('active');
+    document.getElementById('screen-lookup').classList.add('active');
+    if(lastState) render(lastState);
+  }
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('.basket-link');
+    if(!link) return;
+    const basketId = parseInt(link.dataset.basketid, 10);
+    if(!Number.isNaN(basketId)) goToBasketLookup(basketId);
+  });
+
+
+  const PERIOD_LABELS = { today:'최근 24시간', '7d':'최근 7일', month:'이번달', all:'전체' };
+
+  function isWithinPeriod(dateObj, period, now){
+    if(period === 'all') return true;
+    if(!dateObj) return false;
+    if(period === 'today'){
+      const diff = now - dateObj;
+      return diff >= 0 && diff <= 24*60*60*1000;
+    }
+    if(period === '7d'){
+      const diff = now - dateObj;
+      return diff >= 0 && diff <= 7*24*60*60*1000;
+    }
+    if(period === 'month'){
+      return dateObj.getFullYear() === now.getFullYear() && dateObj.getMonth() === now.getMonth();
+    }
+    if(period === 'custom'){
+      if(!customStartDate || !customEndDate) return false;
+      return dateObj >= customStartDate && dateObj <= customEndDate;
+    }
+    return true;
+  }
+
+  const RENT_POINT = 1; // 대여 시 건당 1점
+
+  // 반납 점수: 대여~반납 경과시간(분) 기준
+  //  1시간 미만: 0점 / 1시간 이상~24시간 미만: 3점 / 24시간 이상~5일 미만: 2점 / 5일 이상: 1점
+  function calcReturnPoints(mins){
+    if(mins < 60) return 0;
+    if(mins < 1440) return 3;
+    if(mins < 7200) return 2;
+    return 1;
+  }
+
+  function computeRanking(state){
+    const now = new Date();
+    // 마일리지는 적립만 존재(차감 개념 없음) - 대여/반납으로 적립된 건만 집계, 선택한 기간 기준으로 합계
+    const filteredLog = state.log.filter(l =>
+      l.type !== 'adjust' && l.type !== 'mileageRedeem' && isWithinPeriod(l.at ? new Date(l.at) : null, rankPeriod, now)
+    );
+    const agg = {};
+    filteredLog.forEach(l => {
+      if(!agg[l.dept]) agg[l.dept] = { rentCount:0, returnCount:0, earned:0 };
+      if(l.action === '대여') agg[l.dept].rentCount += 1;
+      else if(l.action === '반납') agg[l.dept].returnCount += 1;
+      agg[l.dept].earned += (l.points != null ? l.points : 0);
+    });
+
+    return Object.entries(agg)
+      .map(([id,u]) => ({
+        id,
+        rentCount: u.rentCount,
+        returnCount: u.returnCount,
+        earned: u.earned,
+        cumulativeReturn: (state.users[id] && state.users[id].returnCount) || 0
+      }))
+      .sort((a,b) => b.earned - a.earned);
+  }
+
+  // ---- 관리자 비밀번호 변경 ----
+  pwChangeBtn.addEventListener('click', async () => {
+    const current = pwChangeCurrentInput.value;
+    const next = pwChangeNewInput.value;
+    const confirm = pwChangeConfirmInput.value;
+
+    if(!current){
+      pwChangeMsg.textContent = '현재 비밀번호를 입력해 주세요.';
+      return;
+    }
+    if(next.length < 4){
+      pwChangeMsg.textContent = '새 비밀번호는 4자 이상으로 입력해 주세요.';
+      return;
+    }
+    if(next !== confirm){
+      pwChangeMsg.textContent = '새 비밀번호가 서로 일치하지 않습니다.';
+      return;
+    }
+
+    pwChangeBtn.disabled = true;
+    pwChangeMsg.textContent = '확인 중...';
+    await loadAdminPassword(); // 다른 기기에서 이미 바뀌었을 수 있으므로 최신값으로 확인
+    if(current !== adminPassword){
+      pwChangeBtn.disabled = false;
+      pwChangeMsg.textContent = '현재 비밀번호가 올바르지 않습니다.';
+      return;
+    }
+    if(next === current){
+      pwChangeBtn.disabled = false;
+      pwChangeMsg.textContent = '현재 비밀번호와 다른 값으로 설정해 주세요.';
+      return;
+    }
+
+    const ok = await saveAdminPassword(next);
+    pwChangeBtn.disabled = false;
+    if(!ok){
+      pwChangeMsg.textContent = '저장에 실패했습니다. 네트워크 연결을 확인한 뒤 다시 시도해 주세요.';
+      return;
+    }
+    pwChangeCurrentInput.value = '';
+    pwChangeNewInput.value = '';
+    pwChangeConfirmInput.value = '';
+    pwChangeMsg.textContent = '';
+    showAlert('변경 완료', '관리자 비밀번호가 변경되었습니다. 다음 로그인부터 새 비밀번호를 사용해 주세요. (다른 태블릿에도 동일하게 적용됩니다)');
+  });
+
+  // ---- 데이터 초기화 ----
+  clearStockBtn.addEventListener('click', () => {
+    showYesNo(
+      '재고 전체 삭제',
+      '등록된 장바구니를 모두 삭제하고 입고·폐기/분실 기록도 비웁니다. 총 보유수량이 0개가 되며 되돌릴 수 없습니다. 계속하시겠습니까?',
+      '예, 계속합니다', '아니오',
+      () => {
+        showYesNo(
+          '최종 확인',
+          '정말로 재고를 전부 삭제하시겠습니까? (삭제 전 데이터는 백업 파일로 내려받아집니다)',
+          '예, 삭제합니다', '아니오',
+          async () => {
+            const state = await loadState();
+            downloadJsonBackup(state, '재고전체삭제전');
+            state.baskets = [];
+            state.log = state.log.filter(l => l.type !== 'adjust');
+            if(!(await saveState(state))) return;
+            render(state);
+            showAlert('삭제 완료', '재고가 모두 삭제되었습니다. 재고관리 화면의 "입고 처리"로 장바구니 번호를 새로 등록해 주세요. (삭제 전 데이터가 백업 파일로 다운로드되었습니다)');
+          },
+          () => {}
+        );
+      },
+      () => {}
+    );
+  });
+
+  resetBasketsBtn.addEventListener('click', () => {
+    showYesNo(
+      '재고 상태 초기화',
+      '모든 장바구니를 "대여 가능" 상태로 초기화합니다. 현재 대여 중인 기록이 모두 사라지며 되돌릴 수 없습니다. 계속하시겠습니까?',
+      '예, 초기화합니다', '아니오',
+      async () => {
+        const state = await loadState();
+        downloadJsonBackup(state, '재고초기화전');
+        state.baskets.forEach(b => { b.status = 'available'; b.dept = null; b.rentedAt = null; });
+        if(!(await saveState(state))) return;
+        render(state);
+        showAlert('초기화 완료', '모든 장바구니가 "대여 가능" 상태로 초기화되었습니다. (초기화 전 데이터가 백업 파일로 다운로드되었습니다)');
+      },
+      () => {}
+    );
+  });
+
+  resetLogBtn.addEventListener('click', () => {
+    showYesNo(
+      '이력 초기화',
+      '대여/반납 이력을 모두 삭제합니다. 되돌릴 수 없습니다. 계속하시겠습니까?',
+      '예, 초기화합니다', '아니오',
+      async () => {
+        const state = await loadState();
+        downloadJsonBackup(state, '이력초기화전');
+        state.log = [];
+        if(!(await saveState(state))) return;
+        render(state);
+        showAlert('초기화 완료', '대여/반납 이력이 모두 삭제되었습니다. (초기화 전 데이터가 백업 파일로 다운로드되었습니다)');
+      },
+      () => {}
+    );
+  });
+
+  resetStatsBtn.addEventListener('click', () => {
+    showYesNo(
+      '이용실적 초기화',
+      '부서/업체별 누적 이용실적(마일리지)을 모두 삭제합니다. 되돌릴 수 없습니다. 계속하시겠습니까?',
+      '예, 초기화합니다', '아니오',
+      async () => {
+        const state = await loadState();
+        downloadJsonBackup(state, '실적초기화전');
+        state.users = {};
+        if(!(await saveState(state))) return;
+        render(state);
+        showAlert('초기화 완료', '이용실적(마일리지)이 모두 삭제되었습니다. (초기화 전 데이터가 백업 파일로 다운로드되었습니다)');
+      },
+      () => {}
+    );
+  });
+
+  // ---- 훼손/분실 신고 전용: 대여 부서/업체로 장바구니 조회 (QR 스캔 대체) ----
+  function searchRentedBasketsByQuery(state, query){
+    const q = query.trim();
+    if(!DEPARTMENTS.includes(q)) return [];
+    return state.baskets.filter(b => b.status === 'rented' && b.dept === q);
+  }
+
+  empLookupOpenBtn.addEventListener('click', () => {
+    empLookupInput.value = '';
+    empLookupResults.innerHTML = '';
+    empLookupModal.classList.add('show');
+    setTimeout(() => empLookupInput.focus(), 50);
+  });
+
+  empLookupCancelBtn.addEventListener('click', () => {
+    empLookupModal.classList.remove('show');
+  });
+
+  empLookupSearchBtn.addEventListener('click', async () => {
+    const query = empLookupInput.value;
+    if(!DEPARTMENTS.includes(query.trim())){
+      empLookupResults.innerHTML = '<div class="qr-lookup-empty">부서/업체를 선택해 주세요.</div>';
+      return;
+    }
+    const state = await loadState();
+    const matches = searchRentedBasketsByQuery(state, query);
+
+    if(matches.length === 0){
+      empLookupResults.innerHTML = '<div class="qr-lookup-empty">일치하는 대여 중인 장바구니가 없습니다.</div>';
+      return;
+    }
+    empLookupResults.innerHTML = matches.map(b => {
+      return `<div class="qr-lookup-row" data-basket="${b.id}">
+        <div class="qlr-top">
+          <span class="qlr-basket">장바구니 ${padBasket(b.id)}번</span>
+          <span class="qlr-time">대여 ${fmtRentedAt(b.rentedAt)}</span>
+        </div>
+      </div>`;
+    }).join('');
+    Array.from(empLookupResults.querySelectorAll('.qr-lookup-row')).forEach(row => {
+      row.addEventListener('click', () => {
+        basketDigits = row.dataset.basket;
+        renderFields();
+        empLookupModal.classList.remove('show');
+      });
+    });
+  });
+
+  function proceedAfterEmpConfirmed(){
+    processFlow();
+  }
+
+  function renderRankTable(state){
+    if(rankPeriod === 'custom' && customStartDate && customEndDate){
+      rankPeriodLabel.textContent = `${customStartInput.value} ~ ${customEndInput.value}`;
+    } else {
+      rankPeriodLabel.textContent = PERIOD_LABELS[rankPeriod] || '전체';
+    }
+
+    const ranked = computeRanking(state).slice(0,5);
+
+    if(ranked.length === 0){
+      rankBody.innerHTML = `<tr><td colspan="5" style="color:var(--sub);padding:12px 8px;">해당 기간에는 이용 실적이 없습니다</td></tr>`;
+    } else {
+      rankBody.innerHTML = ranked.map((r,i) => `
+        <tr>
+          <td class="rank">${i+1}</td>
+          <td>${empLabel(state, r.id)}</td>
+          <td>${r.rentCount}회</td>
+          <td>${r.returnCount}회</td>
+          <td>${r.earned}점</td>
+        </tr>`).join('');
+    }
+  }
+
+  periodRow.querySelectorAll('.periodbtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      rankPeriod = btn.dataset.period;
+      periodRow.querySelectorAll('.periodbtn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      customDateGroup.style.display = rankPeriod === 'custom' ? '' : 'none';
+      customDateMsg.textContent = '';
+      if(rankPeriod !== 'custom' && lastState) renderRankTable(lastState);
+    });
+  });
+
+  customDateApplyBtn.addEventListener('click', () => {
+    const startVal = customStartInput.value;
+    const endVal = customEndInput.value;
+    if(!startVal || !endVal){
+      customDateMsg.textContent = '시작일과 종료일을 모두 선택해 주세요.';
+      return;
+    }
+    const start = new Date(startVal + 'T00:00:00');
+    const end = new Date(endVal + 'T23:59:59');
+    if(start > end){
+      customDateMsg.textContent = '시작일은 종료일보다 이후일 수 없습니다.';
+      return;
+    }
+    customDateMsg.textContent = '';
+    customStartDate = start;
+    customEndDate = end;
+    if(lastState) renderRankTable(lastState);
+  });
+
+  function showResult(success, message){
+    resultIcon.textContent = success ? '✅' : '⚠️';
+    resultTitle.textContent = success ? '처리 완료' : '처리 실패';
+    resultTitle.className = 'resultTitle ' + (success ? 'success' : 'fail');
+    resultMsg.textContent = message;
+    showHomeStep('result');
+  }
+
+  async function processFlow(){
+    const state = await loadState();
+    const basketNum = parseInt(basketDigits, 10);
+    const basket = state.baskets.find(b => b.id === basketNum);
+    const now = new Date();
+
+    if(!basket){
+      showAlert('처리 실패', `존재하지 않는 장바구니 번호(${padBasket(basketNum)}번)입니다.`);
+      return;
+    }
+
+    if(flowMode === '대여'){
+      if(basket.status === 'rented'){
+        showAlert('처리 실패', `장바구니 ${padBasket(basketNum)}번은 이미 대여 중입니다.`);
+        return;
+      }
+      basket.status = 'rented'; basket.dept = deptValue; basket.rentedAt = now.toISOString();
+
+      if(!state.users[deptValue]) state.users[deptValue] = { rentCount:0, returnCount:0 };
+      state.users[deptValue].rentCount += 1;
+
+      const remainAfter = state.baskets.filter(b => b.status === 'available').length;
+      state.log.unshift({ time: fmtTime(now), at: now.toISOString(), dept: deptValue, action:'대여', basketId: basketNum, remain: remainAfter, points: RENT_POINT });
+      if(!(await saveState(state))) return;
+      render(state);
+      showResult(true, `${deptValue} · 장바구니 ${padBasket(basketNum)}번이 대여되었습니다.`);
+    } else if(flowMode === '반납'){
+      if(basket.status === 'available'){
+        showAlert('처리 실패', `장바구니 ${padBasket(basketNum)}번은 대여 중이 아닙니다.`);
+        return;
+      }
+      const rentedAt = basket.rentedAt ? new Date(basket.rentedAt) : now;
+      const mins = Math.max(1, Math.floor((now - rentedAt) / 60000));
+      const returnPoints = calcReturnPoints(mins);
+      basket.status = 'available'; basket.dept = null; basket.rentedAt = null;
+
+      if(!state.users[deptValue]) state.users[deptValue] = { rentCount:0, returnCount:0 };
+      state.users[deptValue].returnCount += 1;
+      const newCount = state.users[deptValue].returnCount;
+
+      const remainAfter = state.baskets.filter(b => b.status === 'available').length;
+      state.log.unshift({ time: fmtTime(now), at: now.toISOString(), dept: deptValue, action:'반납', basketId: basketNum, remain: remainAfter, points: returnPoints });
+      if(!(await saveState(state))) return;
+      render(state);
+
+      let extra = '';
+      if(newCount % REWARD_EVERY === 0){
+        extra = ` 누적 반납 ${newCount}회 달성 — 마일리지 지급대상입니다! 🎁`;
+      }
+      showResult(true, `${deptValue} · 장바구니 ${padBasket(basketNum)}번이 반납되었습니다. (이용시간 약 ${mins}분, ${returnPoints}점 적립)${extra}`);
+    } else {
+      // 훼손/분실 신고 - 대여 중인 장바구니만 신고 가능
+      if(basket.status !== 'rented'){
+        showAlert('처리 실패', `장바구니 ${padBasket(basketNum)}번은 대여 중이 아니라 신고할 수 없습니다. 대여 중인 장바구니만 훼손/분실 신고가 가능합니다.`);
+        return;
+      }
+      state.baskets = state.baskets.filter(b => b.id !== basketNum);
+      const remainAfter = state.baskets.filter(b => b.status === 'available').length;
+      const logEntry = {
+        time: fmtTime(now), at: now.toISOString(), type:'adjust', action:'폐기/분실',
+        qty:1, reason: `${reportReason} 신고`, dept: deptValue, basketId: basketNum, remain: remainAfter
+      };
+      state.log.unshift(logEntry);
+      if(!(await saveState(state))) return;
+      render(state);
+      const reportTail = reportReason === '훼손'
+        ? '훼손된 장바구니는 신고자께서 자체 처리해 주시기 바랍니다. 별도로 반납하지 않으셔도 됩니다.'
+        : '';
+      showResult(true, `장바구니 ${padBasket(basketNum)}번이 ${reportReason}(으)로 접수되었습니다. 신고해 주셔서 감사합니다.${reportTail ? ' ' + reportTail : ''}`);
+    }
+  }
+
+  function isValidDept(id){
+    return DEPARTMENTS.includes(id);
+  }
+
+  function closeActionModal(){
+    actionModal.classList.remove('show');
+    actionModalButtons.innerHTML = '';
+  }
+
+  function showAlert(title, message){
+    actionModalTitle.textContent = title;
+    actionModalMsg.textContent = message;
+    actionModalButtons.innerHTML = '';
+    const okBtn = document.createElement('button');
+    okBtn.className = 'modal-confirm';
+    okBtn.textContent = '확인';
+    okBtn.addEventListener('click', closeActionModal);
+    actionModalButtons.appendChild(okBtn);
+    actionModal.classList.add('show');
+  }
+
+  function showConfirm(title, message, onConfirm){
+    actionModalTitle.textContent = title;
+    actionModalMsg.textContent = message;
+    actionModalButtons.innerHTML = '';
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'modal-cancel';
+    cancelBtn.textContent = '취소';
+    cancelBtn.addEventListener('click', closeActionModal);
+    const okBtn = document.createElement('button');
+    okBtn.className = 'modal-confirm';
+    okBtn.textContent = '확인';
+    okBtn.addEventListener('click', () => { closeActionModal(); onConfirm(); });
+    actionModalButtons.appendChild(cancelBtn);
+    actionModalButtons.appendChild(okBtn);
+    actionModal.classList.add('show');
+  }
+
+  function showYesNo(title, message, yesLabel, noLabel, onYes, onNo){
+    actionModalTitle.textContent = title;
+    actionModalMsg.textContent = message;
+    actionModalButtons.innerHTML = '';
+    const noBtn = document.createElement('button');
+    noBtn.className = 'modal-cancel';
+    noBtn.textContent = noLabel;
+    noBtn.addEventListener('click', () => { closeActionModal(); onNo(); });
+    const yesBtn = document.createElement('button');
+    yesBtn.className = 'modal-confirm';
+    yesBtn.textContent = yesLabel;
+    yesBtn.addEventListener('click', () => { closeActionModal(); onYes(); });
+    actionModalButtons.appendChild(noBtn);
+    actionModalButtons.appendChild(yesBtn);
+    actionModal.classList.add('show');
+  }
+
+  goRentBtn.addEventListener('click', () => {
+    flowMode = '대여';
+    resetInputFields();
+    stepInputTitle.style.display = '';
+    stepInputTitle.textContent = '대여 정보 입력';
+    reportReasonGroup.style.display = 'none';
+    basketBox.style.display = '';
+    inputPhase = 'basket';
+    activeField = 'basket';
+    updateFieldFocus();
+    showHomeStep('input');
+  });
+
+  goReturnBtn.addEventListener('click', () => {
+    flowMode = '반납';
+    resetInputFields();
+    stepInputTitle.style.display = '';
+    stepInputTitle.textContent = '반납 정보 입력';
+    reportReasonGroup.style.display = 'none';
+    basketBox.style.display = '';
+    inputPhase = 'basket';
+    activeField = 'basket';
+    updateFieldFocus();
+    showHomeStep('input');
+  });
+
+  goReportBtn.addEventListener('click', () => {
+    flowMode = '훼손분실';
+    resetInputFields();
+    reportReason = '훼손';
+    reportReasonRow.querySelectorAll('.periodbtn').forEach(b => b.classList.toggle('active', b.dataset.reason === reportReason));
+    stepInputTitle.style.display = 'none';
+    stepInputTitle.textContent = '';
+    reportReasonGroup.style.display = '';
+    basketBox.style.display = '';
+    empLookupOpenBtn.style.display = '';
+    inputPhase = 'basket';
+    activeField = 'basket';
+    updateFieldFocus();
+    showHomeStep('input');
+  });
+
+  reportReasonRow.querySelectorAll('.periodbtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      reportReason = btn.dataset.reason;
+      reportReasonRow.querySelectorAll('.periodbtn').forEach(b => b.classList.toggle('active', b === btn));
+    });
+  });
+
+  inputBackBtn.addEventListener('click', () => {
+    showHomeStep('buttons');
+  });
+
+  inputNextBtn.addEventListener('click', async () => {
+    // ---- 대여/반납/훼손분실 신고: 장바구니 번호 직접 입력 흐름 ----
+    if(flowMode === '대여' || flowMode === '반납' || flowMode === '훼손분실'){
+      if(inputPhase === 'basket'){
+        const basketNum = parseInt(basketDigits, 10);
+        if(!Number.isInteger(basketNum) || basketNum <= 0){
+          showAlert('입력 오류', '장바구니 번호를 올바르게 입력해 주세요.');
+          return;
+        }
+        const state = await loadState();
+        const basket = state.baskets.find(b => b.id === basketNum);
+        if(!basket){
+          showAlert('입력 오류', `존재하지 않는 장바구니 번호(${padBasket(basketNum)}번)입니다.`);
+          return;
+        }
+        if(flowMode === '대여' && basket.status === 'rented'){
+          showAlert('처리 실패', `장바구니 ${padBasket(basketNum)}번은 이미 대여 중입니다.`);
+          return;
+        }
+        if(flowMode === '반납'){
+          if(basket.status !== 'rented'){
+            showAlert('처리 실패', `장바구니 ${padBasket(basketNum)}번은 대여 중이 아닙니다.`);
+            return;
+          }
+          const renterId = basket.dept;
+          showYesNo(
+            '반납자 확인',
+            `장바구니 ${padBasket(basketNum)}번은 ${renterId}에서 대여하였습니다. 반납하시는 분도 같은 부서/업체가 맞습니까?`,
+            '예, 맞습니다', '아니오',
+            () => {
+              // 예 - 대여 부서/업체에서 반납 -> 부서/업체 선택 없이 바로 처리
+              deptValue = renterId;
+              processFlow();
+            },
+            () => {
+              // 아니오 - 다른 부서/업체가 반납 -> 반납 부서/업체 선택 화면으로 이동
+              inputPhase = 'emp';
+              confirmBasketNumber(basketNum);
+              activeField = 'emp';
+              updateFieldFocus();
+            }
+          );
+          return;
+        }
+        if(flowMode === '훼손분실'){
+          if(basket.status !== 'rented'){
+            showAlert('처리 실패', `장바구니 ${padBasket(basketNum)}번은 대여 중이 아니라 신고할 수 없습니다. 대여 중인 장바구니만 훼손/분실 신고가 가능합니다.`);
+            return;
+          }
+          // 장바구니 번호(+신고유형) 확인 완료 -> 신고 부서/업체만 선택하는 화면으로 이동
+          inputPhase = 'emp';
+          reportReasonGroup.style.display = 'none';
+          confirmBasketNumber(basketNum);
+          empLookupOpenBtn.style.display = 'none';
+          activeField = 'emp';
+          updateFieldFocus();
+          return;
+        }
+        // 대여: 장바구니 번호 확인 완료 -> 부서/업체 선택 단계로 이동
+        inputPhase = 'emp';
+        confirmBasketNumber(basketNum);
+        activeField = 'emp';
+        updateFieldFocus();
+        return;
+      }
+      // inputPhase === 'emp'
+      if(!isValidDept(deptValue)){
+        showAlert('입력 오류', '부서/업체를 선택해 주세요.');
+        return;
+      }
+      if(flowMode === '훼손분실'){
+        const basketNum = parseInt(basketDigits, 10);
+        showYesNo(
+          '신고 확인',
+          `${deptValue}에서 장바구니 ${padBasket(basketNum)}번을 ${reportReason}(으)로 신고하시겠습니까?`,
+          '예', '아니오',
+          () => { proceedAfterEmpConfirmed(); },
+          () => { /* 아니오 - 입력 화면에 그대로 머무름 */ }
+        );
+        return;
+      }
+      {
+        const basketNum = parseInt(basketDigits, 10);
+        const actionLabel = flowMode === '대여' ? '대여' : '반납';
+        showYesNo(
+          `${actionLabel} 확인`,
+          `${deptValue}에서 장바구니 ${padBasket(basketNum)}번을 ${actionLabel}하시겠습니까?`,
+          '예', '아니오',
+          () => { processFlow(); },
+          () => { /* 아니오 - 입력 화면에 그대로 머무름 */ }
+        );
+      }
+      return;
+    }
+  });
+
+  resultDoneBtn.addEventListener('click', () => {
+    showHomeStep('buttons');
+  });
+
+  tabs.forEach(t => {
+    t.addEventListener('click', () => {
+      tabs.forEach(x => x.classList.remove('active'));
+      screens.forEach(s => s.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById('screen-' + t.dataset.screen).classList.add('active');
+      if(t.dataset.screen === 'home'){ showHomeStep('buttons'); }
+    });
+  });
+
+
+
+  // ---- 불편사항 접수 (사용자는 접수만, 목록은 관리자 모드에서만 불러옴) ----
+  const CP_CATS = [
+    '대여·반납 처리 오류',       // 반납했는데 대여중으로 표시, 번호 입력 오류 등
+    '화면·입력 오류',            // 키오스크 화면, 키패드, 목록 검색 문제
+    '재고 부족·보관 위치',       // 장바구니가 없거나 반납 장소가 불편한 경우
+    '청결·사양 불편',            // 오염, 크기, 바퀴, 손잡이 등 사용성 (파손·분실은 별도 신청)
+    '마일리지·이용실적 문의',
+    '부서/업체 목록 수정 요청',  // 부서명 변경, 업체 추가 요청
+    '이용방법·안내 개선',
+    '기타'
+  ];
+  const CP_COOLDOWN_MS = 60000;
+  const FB_COMPLAINTS = fbDb.collection('complaints');
+  const cpDept = document.getElementById('cpDept');
+  const cpCat = document.getElementById('cpCat');
+  const cpText = document.getElementById('cpText');
+  const cpCount = document.getElementById('cpCount');
+  const cpSubmit = document.getElementById('cpSubmit');
+  const cpMsg = document.getElementById('cpMsg');
+  CP_CATS.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; cpCat.appendChild(o); });
+  let cpLastSent = 0;
+  function cpSetMsg(t, ok){ cpMsg.textContent = t; cpMsg.style.color = ok ? '#1B7F3B' : '#B3261E'; }
+  cpText.addEventListener('input', () => { cpCount.textContent = `(${cpText.value.length}/300)`; });
+  cpSubmit.addEventListener('click', async () => {
+    const dept = cpDept.value.trim();
+    const text = cpText.value.trim();
+    if(!isValidDept(dept)){ cpSetMsg('목록에 있는 부서/업체를 선택해 주세요.', false); return; }
+    if(text.length < 5){ cpSetMsg('내용을 5자 이상 적어 주세요.', false); return; }
+    const wait = CP_COOLDOWN_MS - (Date.now() - cpLastSent);
+    if(wait > 0){ cpSetMsg(`잠시 후 다시 접수해 주세요. (${Math.ceil(wait/1000)}초)`, false); return; }
+    cpSubmit.disabled = true;
+    try{
+      await FB_COMPLAINTS.add({ dept, cat: cpCat.value, text, status: 'new', createdAt: Date.now() });
+      cpLastSent = Date.now();
+      cpText.value = ''; cpCount.textContent = '(0/300)';
+      cpSetMsg('접수되었습니다. 소중한 의견 감사합니다.', true);
+    }catch(e){
+      console.error('불편사항 접수 실패', e);
+      cpSetMsg('접수하지 못했습니다. 네트워크 연결을 확인하거나 잠시 후 다시 시도해 주세요.', false);
+    }finally{
+      cpSubmit.disabled = false;
+    }
+  });
+
+  // 관리자: 접수 목록
+  const inboxList = document.getElementById('inboxList');
+  const inboxFilter = document.getElementById('inboxFilter');
+  const inboxBadge = document.getElementById('inboxBadge');
+  let inboxUnsub = null;
+  let inboxItems = [];
+  function renderInbox(){
+    const f = inboxFilter.value;
+    const rows = inboxItems.filter(x => f === 'all' ? true : (f === 'done' ? x.status === 'done' : x.status !== 'done'));
+    if(!rows.length){
+      inboxList.innerHTML = '<div class="invempty" style="padding:24px;text-align:center;color:var(--sub);">접수된 불편사항이 없습니다</div>';
+      return;
+    }
+    inboxList.innerHTML = rows.map(x => {
+      const d = new Date(x.createdAt || 0);
+      const done = x.status === 'done';
+      return `<div class="cp-item${done ? ' done' : ''}">
+        <div class="cp-head"><span><span class="cp-cat">${escHtml(x.cat || '기타')}</span>${escHtml(x.dept || '')}</span><span>${d.toLocaleDateString('ko-KR')} ${fmtTime(d)}${done ? ' · 처리완료' : ''}</span></div>
+        <div class="cp-text">${escHtml(x.text || '')}</div>
+        <div class="cp-acts"><button data-id="${escHtml(x.id)}" data-act="${done ? 'reopen' : 'done'}">${done ? '미처리로 되돌리기' : '처리완료'}</button><button class="del" data-id="${escHtml(x.id)}" data-act="del">삭제</button></div>
+      </div>`;
+    }).join('');
+  }
+  inboxFilter.addEventListener('change', renderInbox);
+  inboxList.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-act]');
+    if(!b) return;
+    const id = b.dataset.id, act = b.dataset.act;
+    if(act === 'del'){
+      showYesNo('불편사항 삭제', '이 접수 건을 삭제합니다. 되돌릴 수 없습니다. 계속하시겠습니까?', '삭제', '취소', async () => {
+        try{ await FB_COMPLAINTS.doc(id).delete(); }catch(err){ console.error(err); showAlert('삭제 실패', '삭제하지 못했습니다. 네트워크와 Firestore 규칙(complaints)을 확인해 주세요.'); }
+      }, () => {});
+      return;
+    }
+    FB_COMPLAINTS.doc(id).update({ status: act === 'done' ? 'done' : 'new' }).catch(err => {
+      console.error(err);
+      showAlert('변경 실패', '상태를 바꾸지 못했습니다. 네트워크와 Firestore 규칙(complaints)을 확인해 주세요.');
+    });
+  });
+  function startInbox(){
+    if(inboxUnsub) return;
+    inboxUnsub = FB_COMPLAINTS.orderBy('createdAt', 'desc').limit(300).onSnapshot((snap) => {
+      inboxItems = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+      const n = inboxItems.filter(x => x.status !== 'done').length;
+      inboxBadge.textContent = n;
+      inboxBadge.style.display = n ? '' : 'none';
+      renderInbox();
+    }, (err) => {
+      console.error('불편사항 목록 읽기 실패', err);
+      inboxList.innerHTML = '<div class="invempty" style="padding:24px;text-align:center;color:var(--sub);">목록을 불러오지 못했습니다. Firestore 규칙(complaints)을 확인해 주세요.</div>';
+    });
+  }
+  function stopInbox(){
+    if(inboxUnsub){ inboxUnsub(); inboxUnsub = null; }
+    inboxItems = [];
+    inboxBadge.style.display = 'none';
+  }
+
+  // ---- 현황·이력 CSV 다운로드 ----
+  function csvEscape(val){
+    const str = String(val == null ? '' : val);
+    if(/[",\n]/.test(str)) return '"' + str.replace(/"/g, '""') + '"';
+    return str;
+  }
+  function toCsvString(rows){
+    return rows.map(row => row.map(csvEscape).join(',')).join('\r\n');
+  }
+  function downloadCsv(filename, csvString){
+    const blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // ---- \uCD08\uAE30\uD654 \uC804 \uC790\uB3D9 \uBC31\uC5C5 (JSON \uB2E4\uC6B4\uB85C\uB4DC) ----
+  function downloadJsonBackup(state, label){
+    const payload = {
+      backupType: label,
+      backupAt: new Date().toISOString(),
+      baskets: state.baskets,
+      log: state.log,
+      users: state.users,
+      employees: state.employees || {}
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const dateTag = new Date().toISOString().replace(/[:.]/g,'-');
+    a.href = url;
+    a.download = `KNF\uC7A5\uBC14\uAD6C\uB2C8_\uBC31\uC5C5_${label}_${dateTag}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  exportCsvBtn.addEventListener('click', async () => {
+    const state = lastState || await loadState();
+    const total = state.baskets.length;
+    const inStock = state.baskets.filter(b => b.status === 'available').length;
+    const outStock = total - inStock;
+    const disposedCount = state.log
+      .filter(l => l.type === 'adjust' && isDisposeAction(l.action))
+      .reduce((sum, l) => sum + (l.qty || 0), 0);
+
+    const rows = [];
+    rows.push(['장바구니 재고현황']);
+    rows.push(['총 보유수량', total]);
+    rows.push(['현재고(가용)', inStock]);
+    rows.push(['대여중', outStock]);
+    rows.push(['폐기/분실(누적)', disposedCount]);
+    rows.push([]);
+    rows.push(['입출고 이력']);
+    rows.push(['일자','시간','구분','부서/업체','장바구니번호','사유','수량','잔여재고']);
+    state.log.forEach(l => {
+      const isAdjust = l.type === 'adjust';
+      const { label } = classifyLogRow(l);
+      const dateStr = l.at ? l.at.slice(0,10) : '';
+      const basketCell = l.basketId ? padBasket(l.basketId) : (l.basketRange || '');
+      const reasonCell = isAdjust ? (l.reason || '') : '';
+      const qtyCell = l.qty != null ? l.qty : 1;
+      rows.push([dateStr, l.time, label, l.dept || '', basketCell, reasonCell, qtyCell, l.remain != null ? l.remain : '']);
+    });
+
+    const dateTag = new Date().toISOString().slice(0,10);
+    downloadCsv(`장바구니_재고현황_이력_${dateTag}.csv`, toCsvString(rows));
+  });
+
+  exportRankCsvBtn.addEventListener('click', async () => {
+    const state = lastState || await loadState();
+    const ranked = computeRanking(state);
+
+    const rows = [];
+    const periodLabel = (rankPeriod === 'custom' && customStartDate && customEndDate)
+      ? `${customStartInput.value} ~ ${customEndInput.value}`
+      : (PERIOD_LABELS[rankPeriod] || '전체');
+    rows.push(['이용실적', `조회기간: ${periodLabel}`]);
+    rows.push(['마일리지 산정기준', '대여 1점/건, 반납 1시간미만 0점 / 1시간이상~24시간미만 3점 / 24시간이상~5일미만 2점 / 5일이상 1점']);
+    rows.push(['참고', '대여횟수·반납횟수·적립마일리지 모두 조회기간 기준']);
+    rows.push([]);
+    rows.push(['순위','부서/업체','대여횟수','반납횟수','적립마일리지','누적반납횟수','마일리지지급대상']);
+    ranked.forEach((r, i) => {
+      const isRewardEligible = r.cumulativeReturn > 0 && r.cumulativeReturn % REWARD_EVERY === 0;
+      rows.push([i+1, r.id, r.rentCount, r.returnCount, r.earned, r.cumulativeReturn, isRewardEligible ? 'Y' : '']);
+    });
+
+    const dateTag = new Date().toISOString().slice(0,10);
+    downloadCsv(`이용실적_${dateTag}.csv`, toCsvString(rows));
+  });
+
+  // ---- 재고 카드 클릭 시 상세 목록 ----
+  function openBasketListModal(title, theadHtml, bodyHtml){
+    basketListTitle.textContent = title;
+    basketListThead.innerHTML = theadHtml;
+    basketListBody.innerHTML = bodyHtml;
+    basketListModal.classList.add('show');
+  }
+  function closeBasketListModal(){
+    basketListModal.classList.remove('show');
+  }
+  basketListCloseBtn.addEventListener('click', closeBasketListModal);
+
+  function renderBasketRows(baskets){
+    if(baskets.length === 0){
+      return `<tr><td colspan="4" class="invempty">해당하는 장바구니가 없습니다</td></tr>`;
+    }
+    return baskets.map(b => `
+      <tr>
+        <td><span class="basket-link" data-basketid="${b.id}">${padBasket(b.id)}번</span></td>
+        <td>${b.status === 'available' ? '대여가능' : '대여중'}</td>
+        <td>${b.status === 'rented' ? empLabel(lastState, b.dept) : '-'}</td>
+        <td><button class="mini-btn basket-edit-btn" data-basketid="${b.id}">상태변경</button></td>
+      </tr>`).join('');
+  }
+
+  const basketListThead3 = '<tr><th>장바구니 번호</th><th>상태</th><th>대여 부서/업체</th><th>관리</th></tr>';
+
+  basketListBody.addEventListener('click', (e) => {
+    const btn = e.target.closest('.basket-edit-btn');
+    if(!btn) return;
+    const basketId = parseInt(btn.dataset.basketid, 10);
+    closeBasketListModal();
+    openBasketEditModal(basketId);
+  });
+
+  function openBasketEditModal(basketId){
+    if(!lastState) return;
+    const basket = lastState.baskets.find(b => b.id === basketId);
+    if(!basket) return;
+    basketEditModal.dataset.basketid = String(basketId);
+    const isRented = basket.status === 'rented';
+    basketEditTitle.textContent = `장바구니 ${padBasket(basketId)}번 상태 변경`;
+    basketEditBody.textContent = isRented
+      ? `현재 상태: 대여중 (${empLabel(lastState, basket.dept)}). "대여가능"으로 변경하시겠습니까?`
+      : '현재 상태: 대여가능. "대여중"으로 변경하려면 대여 부서/업체를 선택하세요.';
+    basketEditEmpField.style.display = isRented ? 'none' : '';
+    basketEditEmpInput.value = '';
+    basketEditMsg.textContent = '';
+    basketEditConfirmBtn.textContent = isRented ? '대여가능으로 변경' : '대여중으로 변경';
+    basketEditModal.classList.add('show');
+  }
+
+  basketEditCancelBtn.addEventListener('click', () => {
+    basketEditModal.classList.remove('show');
+  });
+
+  basketEditConfirmBtn.addEventListener('click', async () => {
+    const basketId = parseInt(basketEditModal.dataset.basketid, 10);
+    const state = await loadState();
+    const basket = state.baskets.find(b => b.id === basketId);
+    if(!basket){
+      basketEditMsg.textContent = '해당 장바구니를 찾을 수 없습니다.';
+      return;
+    }
+    const now = new Date();
+    let manualTo, empIdForLog = null;
+    if(basket.status === 'rented'){
+      empIdForLog = basket.dept;
+      basket.status = 'available';
+      basket.dept = null;
+      basket.rentedAt = null;
+      manualTo = 'available';
+    } else {
+      const empId = basketEditEmpInput.value.trim();
+      if(!isValidDept(empId)){
+        basketEditMsg.textContent = '대여 부서/업체를 선택해 주세요.';
+        return;
+      }
+      basket.status = 'rented';
+      basket.dept = empId;
+      basket.rentedAt = now.toISOString();
+      manualTo = 'rented';
+      empIdForLog = empId;
+    }
+    const remainAfter = state.baskets.filter(b => b.status === 'available').length;
+    state.log.unshift({
+      time: fmtTime(now), at: now.toISOString(), type:'adjust', action:'수동변경', manualTo,
+      dept: empIdForLog, basketId, qty:1, reason:'관리자 수동 상태변경', remain: remainAfter
+    });
+    if(!(await saveState(state))) return;
+    render(state);
+    basketEditModal.classList.remove('show');
+    showAlert('변경 완료', `장바구니 ${padBasket(basketId)}번이 ${manualTo === 'available' ? '대여가능' : '대여중'} 상태로 변경되었습니다.`);
+  });
+
+  cardTotal.addEventListener('click', () => {
+    if(!lastState) return;
+    const baskets = [...lastState.baskets].sort((a,b) => a.id - b.id);
+    openBasketListModal(`전체 장바구니 (${baskets.length}개)`, basketListThead3, renderBasketRows(baskets));
+  });
+
+  cardIn.addEventListener('click', () => {
+    if(!lastState) return;
+    const baskets = lastState.baskets.filter(b => b.status === 'available').sort((a,b) => a.id - b.id);
+    openBasketListModal(`현재고(가용) (${baskets.length}개)`, basketListThead3, renderBasketRows(baskets));
+  });
+
+  cardOut.addEventListener('click', () => {
+    if(!lastState) return;
+    const baskets = lastState.baskets.filter(b => b.status === 'rented').sort((a,b) => a.id - b.id);
+    openBasketListModal(`대여중 (${baskets.length}개)`, basketListThead3, renderBasketRows(baskets));
+  });
+
+  cardDisposed.addEventListener('click', () => {
+    if(!lastState) return;
+    const records = lastState.log.filter(l => l.type === 'adjust' && isDisposeAction(l.action));
+    const totalQty = records.reduce((sum, l) => sum + (l.qty || 0), 0);
+    const thead = '<tr><th>일시</th><th>내용</th><th>수량</th></tr>';
+    const body = records.length === 0
+      ? `<tr><td colspan="3" class="invempty">폐기/분실 이력이 없습니다</td></tr>`
+      : records.map(l => {
+        const detail = `${l.reason}${l.dept ? ' · ' + empLabel(lastState, l.dept) : ''}${l.basketId ? ' · 장바구니 ' + padBasket(l.basketId) + '번' : ''}${l.basketRange ? ' · 장바구니 ' + l.basketRange : ''}`;
+        return `<tr>
+          <td>${l.time}</td>
+          <td>${detail}</td>
+          <td>${l.qty}개</td>
+        </tr>`;
+      }).join('');
+    openBasketListModal(`폐기/분실 현황 (누적 ${totalQty}개)`, thead, body);
+  });
+
+  // ---- 관리자 로그인 잠금 (연속 실패 시 일정 시간 잠금) ----
+  const LOGIN_LOCK_KEY = 'knf_admin_login_lock';
+  const LOGIN_MAX_ATTEMPTS = 5;
+  const LOGIN_LOCK_MS = 5 * 60 * 1000; // 5분
+
+  function getLoginLockState(){
+    try{
+      const raw = localStorage.getItem(LOGIN_LOCK_KEY);
+      if(!raw) return { failCount: 0, lockUntil: 0 };
+      const parsed = JSON.parse(raw);
+      return { failCount: parsed.failCount || 0, lockUntil: parsed.lockUntil || 0 };
+    }catch(e){
+      return { failCount: 0, lockUntil: 0 };
+    }
+  }
+  function setLoginLockState(s){
+    try{ localStorage.setItem(LOGIN_LOCK_KEY, JSON.stringify(s)); }catch(e){ /* 저장 불가 시 무시 */ }
+  }
+  function formatRemaining(ms){
+    const totalSec = Math.max(0, Math.ceil(ms / 1000));
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return m > 0 ? `${m}분 ${s}초` : `${s}초`;
+  }
+
+  // ---- 관리자 모드 (단순 비밀번호 로그인) ----
+  adminLoginBtn.addEventListener('click', async () => {
+    const lockState = getLoginLockState();
+    if(lockState.lockUntil && Date.now() < lockState.lockUntil){
+      pinMsg.textContent = `비밀번호를 너무 많이 틀렸습니다. ${formatRemaining(lockState.lockUntil - Date.now())} 후 다시 시도해 주세요.`;
+      return;
+    }
+    const password = adminPasswordInput.value;
+    if(!password){
+      pinMsg.textContent = '비밀번호를 입력해 주세요.';
+      return;
+    }
+    adminLoginBtn.disabled = true;
+    // 다른 기기에서 비밀번호를 변경했을 수 있으므로 로그인 시점에 최신값을 한 번 더 확인
+    await loadAdminPassword();
+    adminLoginBtn.disabled = false;
+    if(password === adminPassword){
+      setLoginLockState({ failCount: 0, lockUntil: 0 });
+      pinMsg.textContent = '';
+      closePinModal();
+      enterAdminMode();
+    } else {
+      pinCard.classList.add('shake');
+      setTimeout(() => pinCard.classList.remove('shake'), 350);
+      const fresh = getLoginLockState();
+      const nextFailCount = fresh.failCount + 1;
+      if(nextFailCount >= LOGIN_MAX_ATTEMPTS){
+        const lockUntil = Date.now() + LOGIN_LOCK_MS;
+        setLoginLockState({ failCount: 0, lockUntil });
+        pinMsg.textContent = `비밀번호를 ${LOGIN_MAX_ATTEMPTS}회 틀려 ${formatRemaining(LOGIN_LOCK_MS)} 동안 잠깁니다.`;
+      } else {
+        setLoginLockState({ failCount: nextFailCount, lockUntil: 0 });
+        pinMsg.textContent = `비밀번호가 올바르지 않습니다. (${LOGIN_MAX_ATTEMPTS - nextFailCount}회 더 틀리면 잠깁니다)`;
+      }
+      adminPasswordInput.value = '';
+      adminPasswordInput.focus();
+    }
+  });
+
+  adminPasswordInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') adminLoginBtn.click();
+  });
+
+  function openPinModal(){
+    adminPasswordInput.value = '';
+    const lockState = getLoginLockState();
+    pinMsg.textContent = (lockState.lockUntil && Date.now() < lockState.lockUntil)
+      ? `비밀번호를 너무 많이 틀렸습니다. ${formatRemaining(lockState.lockUntil - Date.now())} 후 다시 시도해 주세요.`
+      : '';
+    pinModal.classList.add('show');
+    setTimeout(() => adminPasswordInput.focus(), 50);
+  }
+  function closePinModal(){
+    pinModal.classList.remove('show');
+  }
+
+  function updateTabbarLayout(){
+    const visibleTabs = Array.from(tabs).filter(t => t.style.display !== 'none');
+    tabbar.style.gridTemplateColumns = `repeat(${visibleTabs.length}, 1fr)`;
+  }
+
+  function enterAdminMode(){
+    adminMode = true;
+    document.querySelector('.app').classList.add('admin-wide');
+    document.querySelectorAll('.user-tab').forEach(t => t.style.display = 'none');
+    document.querySelectorAll('.admin-tab').forEach(t => t.style.display = '');
+    updateTabbarLayout();
+    adminBtn.textContent = '로그아웃';
+    document.body.classList.add('authed');
+    startInbox();
+    adminBtn.classList.add('on');
+    // 관리자 모드 진입 시 재고관리 화면으로 이동
+    tabs.forEach(x => x.classList.remove('active'));
+    screens.forEach(s => s.classList.remove('active'));
+    document.querySelector('.tab[data-screen="status"]').classList.add('active');
+    document.getElementById('screen-status').classList.add('active');
+    loadState().then(render);
+  }
+
+  function exitAdminMode(){
+    // 로그아웃: 화면을 새로 불러와 다시 비밀번호를 묻습니다.
+    location.reload();
+  }
+
+  adminBtn.addEventListener('click', () => {
+    if(adminMode){ exitAdminMode(); }
+    else { openPinModal(); }
+  });
+
+  updateTabbarLayout();
+
+  // ---- 재고 입고/출고 (관리자) ----
+  let pendingStockType = null;
+  let stockMode = 'range'; // 'range' | 'list'
+
+  async function doStockAdjustList(type, basketNumbers, reason){
+    const state = await loadState();
+    let success = [];
+    let failed = [];
+
+    if(type === '입고'){
+      // 신규 등록 검증: 이미 존재하는 번호가 하나라도 있으면 전체 처리 중단
+      const duplicates = basketNumbers.filter(n => state.baskets.some(b => b.id === n));
+      if(duplicates.length > 0){
+        return { error: `이미 등록된 장바구니 번호가 포함되어 있습니다. (번호: ${duplicates.map(padBasket).join(', ')})` };
+      }
+      basketNumbers.forEach(n => {
+        state.baskets.push({ id:n, status:'available', dept:null, rentedAt:null });
+      });
+      success = [...basketNumbers];
+    } else {
+      basketNumbers.forEach(n => {
+        const basket = state.baskets.find(b => b.id === n);
+        if(!basket || basket.status !== 'available'){ failed.push(n); }
+        else { success.push(n); }
+      });
+      state.baskets = state.baskets.filter(b => !success.includes(b.id));
+    }
+
+    if(success.length === 0){
+      return { error: `처리 가능한 장바구니 번호가 없습니다. (번호: ${failed.map(padBasket).join(', ')})` };
+    }
+
+    const now = new Date();
+    const remainAfter = state.baskets.filter(b => b.status === 'available').length;
+    const label = success.length <= 6
+      ? success.map(padBasket).join(', ') + '번'
+      : `${padBasket(success[0])}~${padBasket(success[success.length-1])} 외 ${success.length}건`;
+    state.log.unshift({
+      time: fmtTime(now), at: now.toISOString(), type:'adjust', action:type,
+      qty: success.length, reason, basketRange: label, remain: remainAfter
+    });
+    if(!(await saveState(state))){
+      return { error: '서버 저장에 실패했습니다. 네트워크 연결을 확인한 뒤 다시 시도해 주세요.' };
+    }
+    render(state);
+
+    if(failed.length > 0){
+      return { warning: `${success.length}건 처리 완료, ${failed.length}건 실패 (번호: ${failed.map(padBasket).join(', ')})` };
+    }
+    return { ok:true };
+  }
+
+  function parseListInput(text){
+    return [...new Set(
+      text.split(/[,\s]+/)
+        .map(s => parseInt(s, 10))
+        .filter(n => Number.isInteger(n) && n > 0)
+    )];
+  }
+
+  function setStockMode(mode){
+    stockMode = mode;
+    stockModeRow.querySelectorAll('.periodbtn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+    rangeGroup.style.display = mode === 'range' ? '' : 'none';
+    listGroup.style.display = mode === 'list' ? '' : 'none';
+  }
+
+  stockModeRow.querySelectorAll('.periodbtn').forEach(btn => {
+    btn.addEventListener('click', () => setStockMode(btn.dataset.mode));
+  });
+
+  function openStockModal(type){
+    pendingStockType = type;
+    stockModalTitle.textContent = type + ' 처리';
+    stockRangeStartInput.value = '';
+    stockRangeEndInput.value = '';
+    stockListInput.value = '';
+    stockReasonInput.value = '';
+    stockModalMsg.textContent = '';
+    stockModalSub.textContent = type === '입고'
+      ? '신규 등록이므로 기존에 없는 번호만 입력할 수 있습니다'
+      : '폐기/분실 처리할 장바구니 번호를 입력하세요';
+    setStockMode('range');
+    stockModal.classList.add('show');
+  }
+  function closeStockModal(){
+    stockModal.classList.remove('show');
+  }
+
+  stockInBtn.addEventListener('click', () => openStockModal('입고'));
+  stockOutBtn.addEventListener('click', () => openStockModal('폐기/분실'));
+  stockCancelBtn.addEventListener('click', closeStockModal);
+
+  stockConfirmBtn.addEventListener('click', async () => {
+    const reason = stockReasonInput.value.trim();
+    if(!reason){
+      stockModalMsg.textContent = '사유를 입력해 주세요.';
+      return;
+    }
+
+    let result;
+    if(stockMode === 'range'){
+      const start = parseInt(stockRangeStartInput.value, 10);
+      const end = parseInt(stockRangeEndInput.value, 10);
+      if(!Number.isInteger(start) || !Number.isInteger(end) || start <= 0 || end < start){
+        stockModalMsg.textContent = '시작~종료 번호를 올바르게 입력해 주세요.';
+        return;
+      }
+      if(end - start + 1 > 1000){
+        stockModalMsg.textContent = '한 번에 처리 가능한 범위는 최대 1000개입니다.';
+        return;
+      }
+      const list = [];
+      for(let n = start; n <= end; n++) list.push(n);
+      result = await doStockAdjustList(pendingStockType, list, reason);
+    } else { // list
+      const list = parseListInput(stockListInput.value);
+      if(list.length === 0){
+        stockModalMsg.textContent = '장바구니 번호 목록을 올바르게 입력해 주세요. (예: 12, 45, 78)';
+        return;
+      }
+      result = await doStockAdjustList(pendingStockType, list, reason);
+    }
+
+    if(result && result.error){
+      stockModalMsg.textContent = result.error;
+      return;
+    }
+    closeStockModal();
+    if(result && result.warning){
+      showAlert('처리 결과', result.warning);
+    }
+  });
+
+
+
+  applyDepartments(DEFAULT_DEPARTMENTS.slice());
+  renderFields();
+  updateFieldFocus();
+  loadState().then(render);
+  loadAdminPassword();
+  openPinModal();
+  purgeStoredEmployeeNames();
+
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+  }
+})();
+</script>
+</body>
+</html>
