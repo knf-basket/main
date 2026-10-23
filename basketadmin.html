@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>KNF 장바구니 관리자</title>
+<title>장바구니 관리자</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
@@ -22,7 +22,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="KNF 장바구니 관리자">
+<meta name="apple-mobile-web-app-title" content="장바구니 관리자">
 <meta name="theme-color" content="#0E4A2B">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -574,7 +574,7 @@
         <circle cx="50" cy="32" r="6" fill="#F0AE1B"/>
       </svg>
       <div style="min-width:0;flex:1;">
-        <div class="title">KNF 장바구니 관리자</div>
+        <div class="title">장바구니 관리자</div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:2px;">
           <div style="flex:1;"></div>
           <button class="adminbtn" id="adminBtn">로그아웃</button>
@@ -889,7 +889,7 @@
 <div class="modal-overlay" id="pinModal">
   <div class="modal-card" id="pinCard">
     <div class="modal-title">관리자 로그인</div>
-    <div class="modal-sub">KNF 장바구니 관리자 페이지입니다. 비밀번호를 입력하세요</div>
+    <div class="modal-sub">장바구니 관리자 페이지입니다. 비밀번호를 입력하세요</div>
     <div class="modal-field">
       <label>비밀번호</label>
       <input type="password" id="adminPasswordInput" placeholder="비밀번호" autocomplete="current-password" />
@@ -995,7 +995,7 @@
   const TOTAL = 300;
   const REWARD_EVERY = 10;
   const MAX_DIGITS = 6;
-  const STORE_KEY = 'knf-basket-rental-program-v1'; // 이 브라우저(태블릿) 로컬에만 저장됨 - 완전 오프라인 동작
+  const STORE_KEY = 'basket-rental-program-v1'; // 이 브라우저(태블릿) 로컬에만 저장됨 - 완전 오프라인 동작
 
   const stockTotal = document.getElementById('stockTotal');
   const stockIn = document.getElementById('stockIn');
@@ -2747,7 +2747,7 @@
     const a = document.createElement('a');
     const dateTag = new Date().toISOString().replace(/[:.]/g,'-');
     a.href = url;
-    a.download = `KNF\uC7A5\uBC14\uAD6C\uB2C8_\uBC31\uC5C5_${label}_${dateTag}.json`;
+    a.download = `\uC7A5\uBC14\uAD6C\uB2C8_\uBC31\uC5C5_${label}_${dateTag}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -2940,7 +2940,7 @@
   });
 
   // ---- 관리자 로그인 잠금 (연속 실패 시 일정 시간 잠금) ----
-  const LOGIN_LOCK_KEY = 'knf_admin_login_lock';
+  const LOGIN_LOCK_KEY = 'basket_admin_login_lock';
   const LOGIN_MAX_ATTEMPTS = 5;
   const LOGIN_LOCK_MS = 5 * 60 * 1000; // 5분
 
